@@ -1,16 +1,16 @@
--- [[ NBA Champions - SILLET CLIENT V2 ]]
-local OrionLib = loadstring(game:HttpGet(("https://raw.githubusercontent.com/ionlyusegithubformods/1ton/main/orion.lua")))()
+-- [[ NBA Champions - SILLET CLIENT V2.1 ]]
+-- Usamos una versión optimizada de Orion que carga al instante en Delta
+local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 
--- Crear la ventana principal (Orion maneja el botón flotante automáticamente)
+-- Crear la ventana principal sin intro para evitar bloqueos
 local Window = OrionLib:MakeWindow({
     Name = "SILLET CLIENT V2 - NBA Champions",
     HidePremium = false,
-    SaveConfig = true,
-    ConfigFolder = "SilletChampions",
-    IntroText = "Cargando SILLET CLIENT..."
+    SaveConfig = false,
+    IntroText = "Iniciando..."
 })
 
--- Variables de Control del Jugador y Juego
+-- Variables de Control del Jugador
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -23,7 +23,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     Humanoid = char:WaitForChild("Humanoid")
 end)
 
--- PESTAÑA 1: CANCHA (FUNCIONES DE BALONCESTO)
+-- PESTAÑA 1: BALONCESTO
 local MainTab = Window:MakeTab({
     Name = "Baloncesto",
     Icon = "rbxassetid://4483345998"
@@ -73,7 +73,7 @@ MainTab:AddToggle({
     end
 })
 
--- PESTAÑA 2: MEJORAS DE JUGADOR (OPCIONES ADICIONALES)
+-- PESTAÑA 2: JUGADOR
 local PlayerTab = Window:MakeTab({
     Name = "Jugador",
     Icon = "rbxassetid://4483345998"
@@ -109,30 +109,6 @@ PlayerTab:AddSlider({
     end
 })
 
-local espActive = false
-PlayerTab:AddToggle({
-    Name = "Player ESP (Ver a través de paredes)",
-    Default = false,
-    Callback = function(Value)
-        espActive = Value
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                if espActive then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Name = "SilletESP"
-                    highlight.FillColor = Color3.fromRGB(185, 130, 250)
-                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    highlight.Parent = p.Character
-                else
-                    if p.Character:FindFirstChild("SilletESP") then
-                        p.Character.SilletESP:Destroy()
-                    end
-                end
-            end
-        end
-    end
-})
-
 -- PESTAÑA 3: TELEPORTS
 local TeleportTab = Window:MakeTab({
     Name = "Teleports",
@@ -159,5 +135,4 @@ TeleportTab:AddButton({
     end
 })
 
--- Iniciar la librería
 OrionLib:Init()
