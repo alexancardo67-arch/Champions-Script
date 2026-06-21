@@ -1,51 +1,194 @@
--- [[ NBA Champions - SILLET CLIENT V2.5 ]]
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-
--- Crear la ventana principal (Fluent maneja el botón flotante automáticamente)
-local Window = Fluent:CreateWindow({
-    Title = "SILLET CLIENT V2.5",
-    SubTitle = "by Kevin",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = false, -- Desactivado para que no cause lag en tablets/iOS
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl -- Keybind por defecto
-})
-
--- Variables Principales del Jugador
+-- [[ NBA Champions - SILLET CLIENT V3.0 (NATIVO MÓVIL) ]]
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local RootPart = Character:WaitForChild("HumanoidRootPart")
 local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
 
 LocalPlayer.CharacterAdded:Connect(function(char)
     Character = char
-    RootPart = char:WaitForChild("HumanoidRootPart")
     Humanoid = char:WaitForChild("Humanoid")
+    RootPart = char:WaitForChild("HumanoidRootPart")
 end)
 
--- PESTAÑA 1: BALONCESTO
-local Tabs = {
-    Main = Window:AddTab({ Title = "Baloncesto", Icon = "basketball" }),
-    Player = Window:AddTab({ Title = "Jugador", Icon = "user" }),
-    Teleports = Window:AddTab({ Title = "Teleports", Icon = "map-pin" })
-}
+-- 1. ELIMINAR MENÚS PREVIOS PARA EVITAR QUE SE DUPLIQUEN
+if game:GetService("CoreGui"):FindFirstChild("SilletClientUI") then
+    game:GetService("CoreGui").SilletClientUI:Destroy()
+end
 
--- Funciones de Automatización
+-- 2. CREACIÓN DE LA INTERFAZ NATIVA (ScreenGui)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SilletClientUI"
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
+
+-- VARIABLES DE ESTADO
 local autoGrab = false
-local ToggleGrab = Tabs.Main:AddToggle("AutoGrab", {Title = "Auto Grab & Stole Basketball", Default = false})
+local autoScore = false
+local infiniteJump = false
+local normalSpeed = 16
+local normalJump = 50
 
-ToggleGrab:OnChanged(function()
-    autoGrab = ToggleGrab.Value
+-- 3. EL LOGO FLOTANTE (BOTÓN PARA MINIMIZAR / MAXIMIZAR)
+local FloatingLogo = Instance.new("TextButton")
+FloatingLogo.Name = "FloatingLogo"
+FloatingLogo.Parent = ScreenGui
+FloatingLogo.Size = UDim2.new(0, 60, 0, 60)
+FloatingLogo.Position = UDim2.new(0, 20, 0, 150)
+FloatingLogo.BackgroundColor3 = Color3.fromRGB(130, 50, 200) -- Color Morado Sillet
+FloatingLogo.Text = "SC"
+FloatingLogo.TextColor3 = Color3.fromRGB(255, 255, 255)
+FloatingLogo.TextSize = 22
+FloatingLogo.Font = Enum.Font.SourceSansBold
+FloatingLogo.Visible = false -- Inicia oculto mientras el menú está abierto
+
+local LogoCorner = Instance.new("UICorner")
+LogoCorner.CornerRadius = UDim.new(0, 30) -- Completamente redondo
+LogoCorner.Parent = FloatingLogo
+
+-- Hacer el Logo Flotante Arrastrable por la pantalla
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+FloatingLogo.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = FloatingLogo.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+FloatingLogo.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        FloatingLogo.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- 4. EL PANEL PRINCIPAL
+local MainPanel = Instance.new("Frame")
+MainPanel.Name = "MainPanel"
+MainPanel.Parent = ScreenGui
+MainPanel.Size = UDim2.new(0, 380, 0, 320)
+MainPanel.Position = UDim2.new(0.5, -190, 0.5, -160)
+MainPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainPanel.BorderSizePixel = 0
+
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 12)
+PanelCorner.Parent = MainPanel
+
+-- Barra de Título del Panel
+local TitleBar = Instance.new("TextLabel")
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+TitleBar.Text = "  SILLET CLIENT V3.0 - NBA Champions"
+TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleBar.TextSize = 18
+TitleBar.Font = Enum.Font.SourceSansBold
+TitleBar.TextXAlignment = Enum.TextXAlignment.Left
+TitleBar.Parent = MainPanel
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
+
+-- Botón de Minimizar (Dentro de la barra de título)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 40, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -45, 0, 5)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 20
+MinimizeBtn.Font = Enum.Font.SourceSansBold
+MinimizeBtn.Parent = TitleBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeBtn
+
+-- 5. CONTENEDOR PARA LAS FUNCIONES (ScrollingFrame)
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -20, 1, -60)
+Container.Position = UDim2.new(0, 10, 0, 50)
+Container.BackgroundTransparency = 1
+Container.CanvasSize = UDim2.new(0, 0, 0, 450)
+Container.ScrollBarThickness = 6
+Container.Parent = MainPanel
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Container
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
+
+-- FUNCIÓN AUXILIAR PARA CREAR BOTONES DE ACTIVACIÓN (TOGGLES)
+local function CreateToggle(name, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Name = name
+    Btn.Size = UDim2.new(1, -10, 0, 40)
+    Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    Btn.Text = text .. " [OFF]"
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextSize = 16
+    Btn.Font = Enum.Font.SourceSans
+    Btn.Parent = Container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    
+    local active = false
+    Btn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            Btn.BackgroundColor3 = Color3.fromRGB(130, 50, 200)
+            Btn.Text = text .. " [ON]"
+            Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+            Btn.Text = text .. " [OFF]"
+            Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+        callback(active)
+    end)
+end
+
+-- FUNCIÓN AUXILIAR PARA CREAR BOTONES DE ACCIÓN (BUTTONS)
+local function CreateButton(name, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Name = name
+    Btn.Size = UDim2.new(1, -10, 0, 40)
+    Btn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.TextSize = 16
+    Btn.Font = Enum.Font.SourceSansBold
+    Btn.Parent = Container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+-- 6. ASIGNACIÓN DE LAS FUNCIONES REALES
+
+-- Toggle 1: Auto Grab Ball
+CreateToggle("ToggleGrab", "Auto Grab & Stole Basketball", function(state)
+    autoGrab = state
     task.spawn(function()
         while autoGrab do
             task.wait(0.1)
             pcall(function()
                 for _, obj in pairs(workspace:GetChildren()) do
                     if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
-                        local distance = (RootPart.Position - obj.Position).Magnitude
-                        if distance < 60 then
+                        if RootPart and (RootPart.Position - obj.Position).Magnitude < 70 then
                             RootPart.CFrame = obj.CFrame
                         end
                     end
@@ -55,72 +198,91 @@ ToggleGrab:OnChanged(function()
     end)
 end)
 
-local autoScore = false
-local ToggleScore = Tabs.Main:AddToggle("AutoScore", {Title = "Auto Meter Pelota (Auto Score)", Default = false})
+-- Toggle 2: Super Velocidad
+CreateToggle("ToggleSpeed", "Super Velocidad (WalkSpeed X3)", function(state)
+    if state then
+        normalSpeed = 65
+    else
+        normalSpeed = 16
+    end
+    if Humanoid then Humanoid.WalkSpeed = normalSpeed end
+end)
 
-ToggleScore:OnChanged(function()
-    autoScore = ToggleScore.Value
-    task.spawn(function()
-        while autoScore do
-            task.wait(0.1)
-            pcall(function()
-                local Goal = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
-                if Goal and Character:FindFirstChildOfClass("Tool") then
-                    RootPart.CFrame = Goal.CFrame + Vector3.new(0, 6, 0)
-                end
-            end)
+-- Toggle 3: Super Salto
+CreateToggle("ToggleJump", "Mega Salto (JumpPower X2)", function(state)
+    if state then
+        normalJump = 120
+    else
+        normalJump = 50
+    end
+    if Humanoid then 
+        Humanoid.UseJumpPower = true
+        Humanoid.JumpPower = normalJump 
+    end
+end)
+
+-- Toggle 4: Infinite Jump (Saltar en el aire)
+CreateToggle("ToggleInfJump", "Salto Infinito en el Aire", function(state)
+    infiniteJump = state
+end)
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if infiniteJump and Humanoid then
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- Botón 1: Teleport al Aro Central
+CreateButton("BtnTeleportHoop", "Teleport: Ir al Aro Central", function()
+    pcall(function()
+        local Hoop = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
+        if Hoop and RootPart then
+            RootPart.CFrame = Hoop.CFrame + Vector3.new(0, 3, 0)
         end
     end)
 end)
 
--- PESTAÑA 2: MEJORAS DE JUGADOR
-local SliderSpeed = Tabs.Player:AddSlider("SliderSpeed", {
-    Title = "Velocidad (WalkSpeed)",
-    Description = "Ajusta la velocidad de tu personaje",
-    Min = 16,
-    Max = 150,
-    Default = 16,
-    Rounding = 0,
-    Callback = function(Value)
-        if Humanoid then Humanoid.WalkSpeed = Value end
-    end
-})
+-- Botón 2: Teleport al Lobby
+CreateButton("BtnTeleportSpawn", "Teleport: Volver al Lobby", function()
+    pcall(function()
+        local Spawn = workspace:FindFirstChildOfClass("SpawnLocation")
+        if Spawn and RootPart then
+            RootPart.CFrame = Spawn.CFrame + Vector3.new(0, 4, 0)
+        end
+    end)
+end)
 
-local SliderJump = Tabs.Player:AddSlider("SliderJump", {
-    Title = "Fuerza de Salto (JumpPower)",
-    Description = "Salta más alto para alcanzar el aro",
-    Min = 50,
-    Max = 300,
-    Default = 50,
-    Rounding = 0,
-    Callback = function(Value)
-        if Humanoid then 
-            Humanoid.UseJumpPower = true
-            Humanoid.JumpPower = Value 
+-- Botón 3: Optimizar FPS / Quitar Animaciones Extra
+CreateButton("BtnNoLag", "Optimizar FPS (Quitar Lag Visual)", function()
+    pcall(function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                v.Enabled = false
+            end
+        end
+    end)
+end)
+
+-- Mantener la velocidad y el salto activos de forma forzada si el personaje muere o revive
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Humanoid then
+            Humanoid.WalkSpeed = normalSpeed
+            if normalJump ~= 50 then
+                Humanoid.UseJumpPower = true
+                Humanoid.JumpPower = normalJump
+            end
         end
     end
-})
+end)
 
--- PESTAÑA 3: TELEPORTS
-Tabs.Teleports:AddButton({
-    Title = "Teleport al Aro Central",
-    Callback = function()
-        pcall(function()
-            local Hoop = workspace:FindFirstChild("Hoop")
-            if Hoop then RootPart.CFrame = Hoop.CFrame end
-        end)
-    end
-})
+-- 7. LÓGICA DE MINIMIZAR Y MAXIMIZAR (ACCIONES DE LOS BOTONES)
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainPanel.Visible = false
+    FloatingLogo.Visible = true
+end)
 
-Tabs.Teleports:AddButton({
-    Title = "Teleport al Lobby (Spawn)",
-    Callback = function()
-        pcall(function()
-            local Spawn = workspace:FindFirstChildOfClass("SpawnLocation")
-            if Spawn then RootPart.CFrame = Spawn.CFrame + Vector3.new(0, 3, 0) end
-        end)
-    end
-})
-
--- Seleccionar la primera pestaña al abrir
-Window:SelectTab(1)
+FloatingLogo.MouseButton1Click:Connect(function()
+    FloatingLogo.Visible = false
+    MainPanel.Visible = true
+end)
