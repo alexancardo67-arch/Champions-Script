@@ -1,32 +1,57 @@
--- SILLET CLIENT - VERSION COMPLETA
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 250, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -150)
+-- SILLET CLIENT v1.0 - AIO HUB
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+
+-- 1. PROTECCIÓN DE INTERFAZ
+local protectGui = (gethui or function() return CoreGui end)
+local screenGui = Instance.new("ScreenGui", protectGui())
+
+local MainFrame = Instance.new("Frame", screenGui)
+MainFrame.Size = UDim2.new(0, 250, 0, 400)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Text = "SILLET CLIENT v1.0"
-Title.Size = UDim2.new(0, 250, 0, 30)
+Title.Size = UDim2.new(0, 250, 0, 40)
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 
+-- 2. FUNCIÓN PARA CREAR BOTONES
 local function addButton(text, callback)
     local btn = Instance.new("TextButton", MainFrame)
     btn.Size = UDim2.new(0, 230, 0, 40)
+    btn.Position = UDim2.new(0, 10, 0, #MainFrame:GetChildren() * 45 - 30)
     btn.Text = text
-    btn.Position = UDim2.new(0, 10, 0, #MainFrame:GetChildren() * 45)
     btn.MouseButton1Click:Connect(callback)
 end
 
--- TUS FUNCIONES AQUÍ
-addButton("Fly (Vuelo)", function() 
-    -- Tu lógica de vuelo
+-- 3. FUNCIONES DE JUEGO
+addButton("Fly (Vuelo)", function()
+    -- Lógica de vuelo aquí
+    print("Vuelo activado")
 end)
 
-addButton("Speed Boost", function() 
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 50 
+addButton("Speed Boost (50)", function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = 50
+    end
 end)
 
 addButton("Teleport al Aro", function()
-    local hoop = workspace:FindFirstChild("Hoop")
-    if hoop then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = hoop.CFrame end
+    -- Busca posibles nombres del aro en el mapa
+    local hoop = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket") or workspace:FindFirstChild("Rim")
+    if hoop and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = hoop.CFrame
+    end
+end)
+
+addButton("Cargar Champions Script", function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/alexancardo67-arch/Champions-Script/refs/heads/main/Script_lua"))()
+    end)
+    if not success then warn("Error al cargar: " .. tostring(err)) end
 end)
