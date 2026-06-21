@@ -1,57 +1,565 @@
--- SILLET CLIENT v1.0 - AIO HUB
+-- [[ SILLET CLIENT V9.0 - ALL-IN-ONE SUPREME MASTER SCRIPT ]]
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
 
--- 1. PROTECCIÓN DE INTERFAZ
-local protectGui = (gethui or function() return CoreGui end)
-local screenGui = Instance.new("ScreenGui", protectGui())
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    Humanoid = char:WaitForChild("Humanoid")
+    RootPart = char:WaitForChild("HumanoidRootPart")
+end)
 
-local MainFrame = Instance.new("Frame", screenGui)
-MainFrame.Size = UDim2.new(0, 250, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Text = "SILLET CLIENT v1.0"
-Title.Size = UDim2.new(0, 250, 0, 40)
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-
--- 2. FUNCIÓN PARA CREAR BOTONES
-local function addButton(text, callback)
-    local btn = Instance.new("TextButton", MainFrame)
-    btn.Size = UDim2.new(0, 230, 0, 40)
-    btn.Position = UDim2.new(0, 10, 0, #MainFrame:GetChildren() * 45 - 30)
-    btn.Text = text
-    btn.MouseButton1Click:Connect(callback)
+-- 1. ELIMINAR INTERFACES PREVIAS
+if game:GetService("CoreGui"):FindFirstChild("SilletClientUI") then
+    game:GetService("CoreGui").SilletClientUI:Destroy()
 end
 
--- 3. FUNCIONES DE JUEGO
-addButton("Fly (Vuelo)", function()
-    -- Lógica de vuelo aquí
-    print("Vuelo activado")
-end)
+-- 2. CREACIÓN DE LA INTERFAZ NATIVA
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SilletClientUI"
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
 
-addButton("Speed Boost (50)", function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = 50
+-- VARIABLES DE CONTROL GENERAL
+local customSpeed = 16
+local customJump = 50
+local infiniteJump = false
+local antiFling = false
+local antiRagdoll = false
+
+-- VARIABLES JUEGOS ESPECÍFICOS
+local autoGrabNBA = false
+local autoWinKeyboard = false
+local roleESP = false
+local autoGrabGun = false
+local killAuraMM2 = false
+local autoCoinMM2 = false
+
+-- VARIABLES SHERIFF / INVISIBLE MM2
+local sheriffSilentAim = false
+local sheriffAutoShoot = false
+local sheriffBigHitbox = false
+local invisibleMode = false
+local savedInvisibleCFrame = nil
+local invisibleClone = nil
+
+-- NUEVAS VARIABLES ULTRA AUTO-PLAY / TELEPORTS
+local autoPlayMM2 = false
+
+-- 3. EL LOGO FLOTANTE DE MINIMIZAR ("SC")
+local FloatingLogo = Instance.new("TextButton")
+FloatingLogo.Name = "FloatingLogo"
+FloatingLogo.Parent = ScreenGui
+FloatingLogo.Size = UDim2.new(0, 60, 0, 60)
+FloatingLogo.Position = UDim2.new(0, 20, 0, 150)
+FloatingLogo.BackgroundColor3 = Color3.fromRGB(130, 50, 200)
+FloatingLogo.Text = "SC"
+FloatingLogo.TextColor3 = Color3.fromRGB(255, 255, 255)
+FloatingLogo.TextSize = 22
+FloatingLogo.Font = Enum.Font.SourceSansBold
+FloatingLogo.Visible = false
+
+local LogoCorner = Instance.new("UICorner")
+LogoCorner.CornerRadius = UDim.new(0, 30)
+LogoCorner.Parent = FloatingLogo
+
+-- Hacer el Logo Flotante Arrastrable
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+FloatingLogo.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = FloatingLogo.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+FloatingLogo.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        FloatingLogo.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-addButton("Teleport al Aro", function()
-    -- Busca posibles nombres del aro en el mapa
-    local hoop = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket") or workspace:FindFirstChild("Rim")
-    if hoop and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = hoop.CFrame
-    end
-end)
+-- 4. PANEL PRINCIPAL
+local MainPanel = Instance.new("Frame")
+MainPanel.Name = "MainPanel"
+MainPanel.Parent = ScreenGui
+MainPanel.Size = UDim2.new(0, 390, 0, 360)
+MainPanel.Position = UDim2.new(0.5, -195, 0.5, -180)
+MainPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainPanel.BorderSizePixel = 0
 
-addButton("Cargar Champions Script", function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/alexancardo67-arch/Champions-Script/refs/heads/main/Script_lua"))()
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 12)
+PanelCorner.Parent = MainPanel
+
+-- Barra de Título
+local TitleBar = Instance.new("TextLabel")
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+TitleBar.Text = "  SILLET CLIENT V9.0 - Inteligencia Artificial MM2"
+TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleBar.TextSize = 15
+TitleBar.Font = Enum.Font.SourceSansBold
+TitleBar.TextXAlignment = Enum.TextXAlignment.Left
+TitleBar.Parent = MainPanel
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
+
+-- Botón de Minimizar
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 40, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -45, 0, 5)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.TextSize = 20
+MinimizeBtn.Font = Enum.Font.SourceSansBold
+MinimizeBtn.Parent = TitleBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeBtn
+
+-- 5. CONTENEDOR DE FUNCIONES (ScrollingFrame)
+local Container = Instance.new("ScrollingFrame")
+Container.Size = UDim2.new(1, -20, 1, -60)
+Container.Position = UDim2.new(0, 10, 0, 50)
+Container.BackgroundTransparency = 1
+Container.CanvasSize = UDim2.new(0, 0, 0, 1550) -- Canvas extendido para albergar todo el sistema inteligente
+Container.ScrollBarThickness = 6
+Container.Parent = MainPanel
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Container
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 8)
+
+-- Funciones Auxiliares de Diseño
+local function CreateSection(text)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -10, 0, 30)
+    Label.BackgroundTransparency = 1
+    Label.Text = "--- " .. string.upper(text) .. " ---"
+    Label.TextColor3 = Color3.fromRGB(160, 100, 240)
+    Label.TextSize = 14
+    Label.Font = Enum.Font.SourceSansBold
+    Label.Parent = Container
+end
+
+local function CreateToggle(text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    Btn.Text = text .. " [OFF]"
+    Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Btn.TextSize = 15
+    Btn.Font = Enum.Font.SourceSans
+    Btn.Parent = Container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    
+    local active = false
+    Btn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            Btn.BackgroundColor3 = Color3.fromRGB(130, 50, 200)
+            Btn.Text = text .. " [ON]"
+            Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+            Btn.Text = text .. " [OFF]"
+            Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+        callback(active)
     end)
-    if not success then warn("Error al cargar: " .. tostring(err)) end
+end
+
+local function CreateButton(text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.TextSize = 15
+    Btn.Font = Enum.Font.SourceSansBold
+    Btn.Parent = Container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Btn
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+local function GetMurderer()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then return p end
+        end
+    end
+    return nil
+end
+
+-- ==========================================
+-- 6. GENERACIÓN DE SECCIONES Y CONTROLES
+-- ==========================================
+
+-- SECCIÓN 1: INTELIGENCIA ARTIFICIAL (AUTO-PLAY AUTÓNOMO)
+CreateSection("🤖 Jugar Solo (Auto-Play AFK)")
+
+CreateToggle("Auto-Win Autónomo (Juega por ti mismo)", function(state)
+    autoPlayMM2 = state
+    task.spawn(function()
+        while autoPlayMM2 do
+            task.wait(0.2)
+            pcall(function()
+                if RootPart and Humanoid then
+                    local Murderer = GetMurderer()
+                    local HasKnife = Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
+                    local HasGun = Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
+                    
+                    -- MODO 1: SI ERES EL ASESINO (Mata a todos automáticamente)
+                    if HasKnife then
+                        if LocalPlayer.Backpack:FindFirstChild("Knife") then Humanoid:EquipTool(LocalPlayer.Backpack.Knife) end
+                        for _, p in pairs(Players:GetPlayers()) do
+                            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
+                                RootPart.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
+                                task.wait(0.1)
+                                if Character:FindFirstChild("Knife") then Character.Knife:Activate() end
+                            end
+                        end
+                        
+                    -- MODO 2: SI ERES EL SHERIFF (Elimina al asesino al instante)
+                    elseif HasGun then
+                        if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") and Murderer.Character.Humanoid.Health > 0 then
+                            if LocalPlayer.Backpack:FindFirstChild("Gun") then Humanoid:EquipTool(LocalPlayer.Backpack.Gun) end
+                            RootPart.CFrame = Murderer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4)
+                            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Murderer.Character.HumanoidRootPart.Position)
+                            task.wait(0.1)
+                            if Character:FindFirstChild("Gun") then Character.Gun:Activate() end
+                        end
+                        
+                    -- MODO 3: SI ERES INOCENTE (Esquívalo y recolecta monedas)
+                    else
+                        -- Escapar del asesino si está muy cerca
+                        if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") then
+                            local dist = (RootPart.Position - Murderer.Character.HumanoidRootPart.Position).Magnitude
+                            if dist < 30 then
+                                -- Teletransportar al lado opuesto aleatorio arriba
+                                RootPart.CFrame = RootPart.CFrame * CFrame.new(math.random(-60, 60), 15, math.random(-60, 60))
+                            end
+                        end
+                        
+                        -- Auto Recoger Monedas mientras esquiva
+                        for _, v in pairs(workspace:GetDescendants()) do
+                            if v.Name == "Coin_SubModel" or v.Name == "Coin" then
+                                if RootPart and v:IsA("BasePart") then 
+                                    RootPart.CFrame = v.CFrame 
+                                    task.wait(0.1) 
+                                    break 
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
 end)
+
+-- SECCIÓN 2: TELEPORTS POR EL MAPA
+CreateSection("📍 Teleports por el Mapa")
+
+CreateButton("Teleport: Ir a la Pistola Caída", function()
+    pcall(function()
+        local Gun = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("PickupGun")
+        if Gun and RootPart then RootPart.CFrame = Gun.CFrame else print("No hay pistola en el suelo") end
+    end)
+end)
+
+CreateButton("Teleport: Techo del Mapa (Seguro)", function()
+    pcall(function()
+        if RootPart then RootPart.CFrame = RootPart.CFrame + Vector3.new(0, 80, 0) end
+    end)
+end)
+
+CreateButton("Teleport: Escondite Bajo Tierra (AFK)", function()
+    pcall(function()
+        if RootPart then
+            RootPart.CFrame = CFrame.new(0, -40, 0)
+            local plat = workspace:FindFirstChild("SilletPlatformAFK") or Instance.new("Part")
+            plat.Name = "SilletPlatformAFK" plat.Size = Vector3.new(15, 1, 15) plat.CFrame = CFrame.new(0, -45, 0) plat.Anchored = true plat.Parent = workspace
+        end
+    end)
+end)
+
+CreateButton("Teleport: Centro del Mapa", function()
+    pcall(function()
+        local map = workspace:FindFirstChild("Normal") or workspace:FindFirstChild("Map")
+        if map and map:FindFirstChild("Spawn") then
+            RootPart.CFrame = map.Spawn.CFrame + Vector3.new(0, 3, 0)
+        else
+            RootPart.CFrame = CFrame.new(0, 5, 0)
+        end
+    end)
+end)
+
+-- SECCIÓN 3: PODERES FANTASMA / INVISIBILIDAD
+CreateSection("Poderes Fantasma / Invisibilidad")
+
+CreateToggle("Modo Invisible Total (Ghost)", function(state)
+    invisibleMode = state
+    pcall(function()
+        if invisibleMode and RootPart then
+            savedInvisibleCFrame = RootPart.CFrame
+            local lowerTorso = Character:FindFirstChild("LowerTorso") or Character:FindFirstChild("Torso")
+            if lowerTorso then
+                local rootJoint = RootPart:FindFirstChild("RootJoint") or lowerTorso:FindFirstChild("RootJoint")
+                if rootJoint then invisibleClone = rootJoint:Clone() rootJoint:Destroy() end
+            end
+            RootPart.CFrame = savedInvisibleCFrame * CFrame.new(0, -25, 0)
+        else
+            if invisibleClone and RootPart then
+                local lowerTorso = Character:FindFirstChild("LowerTorso") or Character:FindFirstChild("Torso")
+                if lowerTorso then invisibleClone.Parent = lowerTorso end
+            end
+            if savedInvisibleCFrame and RootPart then RootPart.CFrame = savedInvisibleCFrame end
+        end
+    end)
+end)
+
+CreateButton("⚡ Teleport: Detrás del Asesino", function()
+    pcall(function()
+        local Murderer = GetMurderer()
+        if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") and RootPart then
+            RootPart.CFrame = Murderer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        end
+    end)
+end)
+
+-- SECCIÓN 4: FUNCIONES ESPECIALES SHERIFF
+CreateSection("Funciones Especiales Sheriff")
+
+CreateToggle("Silent Aim (Auto-Apuntar al Asesino)", function(state)
+    sheriffSilentAim = state
+    task.spawn(function()
+        while sheriffSilentAim do
+            task.wait(0.1)
+            pcall(function()
+                local Gun = Character:FindFirstChild("Gun")
+                local Murderer = GetMurderer()
+                if Gun and Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") then
+                    workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Murderer.Character.HumanoidRootPart.Position)
+                end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Agrandar Hitbox del Asesino", function(state)
+    sheriffBigHitbox = state
+    task.spawn(function()
+        while sheriffBigHitbox do
+            task.wait(1)
+            pcall(function()
+                local Murderer = GetMurderer()
+                if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetPart = Murderer.Character.HumanoidRootPart
+                    if sheriffBigHitbox then
+                        targetPart.Size = Vector3.new(15, 15, 15) targetPart.Transparency = 0.6 targetPart.Color = Color3.fromRGB(255, 0, 0) targetPart.CanCollide = false
+                    end
+                end
+            end)
+        end
+        if not sheriffBigHitbox then
+            pcall(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1) p.Character.HumanoidRootPart.Transparency = 1
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- SECCIÓN 5: CONTROLES GLOBALES DE JUGADOR
+CreateSection("Controles de Jugador")
+
+CreateToggle("Super Velocidad (WalkSpeed)", function(state)
+    if state then customSpeed = 50 else customSpeed = 16 end
+    if Humanoid then Humanoid.WalkSpeed = customSpeed end
+end)
+
+CreateToggle("Mega Salto (JumpPower)", function(state)
+    if state then customJump = 125 else customJump = 50 end
+    if Humanoid then Humanoid.UseJumpPower = true Humanoid.JumpPower = customJump end
+end)
+
+CreateToggle("Salto Infinito (Volar)", function(state) infiniteJump = state end)
+
+CreateToggle("Escudo Anti-Fling (Inmune)", function(state)
+    antiFling = state
+    task.spawn(function()
+        while antiFling do
+            task.wait(0.3)
+            pcall(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        for _, part in pairs(p.Character:GetChildren()) do
+                            if part:IsA("BasePart") then part.CanCollide = false end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Anti-Apk / Anti-Ragdoll", function(state)
+    antiRagdoll = state
+    task.spawn(function()
+        while antiRagdoll do
+            task.wait(0.2)
+            if Humanoid then
+                Humanoid.PlatformStand = false
+                if Humanoid:GetState() == Enum.HumanoidStateType.Ragdoll or Humanoid:GetState() == Enum.HumanoidStateType.FallingDown then
+                    Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                end
+            end
+        end
+    end)
+end)
+
+-- SECCIÓN 6: MURDER MYSTERY 2 GENERAL
+CreateSection("Murder Mystery 2 General")
+
+local TargetInput = Instance.new("TextBox")
+TargetInput.Size = UDim2.new(1, -10, 0, 35)
+TargetInput.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+TargetInput.Text = ""
+TargetInput.PlaceholderText = "Nombre de victima para Fling..."
+TargetInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+TargetInput.TextSize = 14
+TargetInput.Font = Enum.Font.SourceSans
+TargetInput.Parent = Container
+Instance.new("UICorner").Parent = TargetInput
+
+CreateButton("💥 Ejecutar Fling Target", function()
+    local targetName = string.lower(TargetInput.Text)
+    local found = nil
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and string.sub(string.lower(p.Name), 1, #targetName) == targetName then found = p break end
+    end
+    if found and found.Character and found.Character:FindFirstChild("HumanoidRootPart") and RootPart then
+        pcall(function()
+            local enemyRoot = found.Character.HumanoidRootPart
+            local oldCFrame = RootPart.CFrame
+            local BV = Instance.new("BodyVelocity") BV.Velocity = Vector3.new(0,0,0) BV.MaxForce = Vector3.new(math.huge,math.huge,math.huge) BV.Parent = RootPart
+            local BAV = Instance.new("BodyAngularVelocity") BAV.AngularVelocity = Vector3.new(0,99999,0) BAV.MaxTorque = Vector3.new(math.huge,math.huge,math.huge) BAV.Parent = RootPart
+            for i = 1, 35 do
+                if enemyRoot then RootPart.CFrame = enemyRoot.CFrame + Vector3.new(0,0.5,0) end
+                task.wait(0.02)
+            end
+            BV:Destroy() BAV:Destroy() RootPart.CFrame = oldCFrame
+        end)
+    end
+end)
+
+CreateToggle("Ver Roles (ESP Paredes)", function(state)
+    roleESP = state
+    task.spawn(function()
+        while roleESP do
+            task.wait(1)
+            pcall(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local char = p.Character
+                        local box = char:FindFirstChild("RoleHighlight") or Instance.new("Highlight")
+                        box.Name = "RoleHighlight" box.Parent = char box.Adornee = char box.FillTransparency = 0.5
+                        if p.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife") then box.FillColor = Color3.fromRGB(255,0,0)
+                        elseif p.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun") then box.FillColor = Color3.fromRGB(0,0,255)
+                        else box.FillColor = Color3.fromRGB(0,255,0) end
+                    end
+                end
+            end)
+        end
+        if not roleESP then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character and p.Character:FindFirstChild("RoleHighlight") then p.Character.RoleHighlight:Destroy() end
+            end
+        end
+    end)
+end)
+
+-- SECCIÓN 7: OTROS JUEGOS RECOLECTORES
+CreateSection("Otros Juegos")
+CreateToggle("NBA: Auto Auto-Grab Balones", function(state)
+    autoGrabNBA = state
+    task.spawn(function()
+        while autoGrabNBA do
+            task.wait(0.1)
+            pcall(function()
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
+                        if RootPart and (RootPart.Position - obj.Position).Magnitude < 70 then RootPart.CFrame = obj.CFrame end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Keyboard Escape: Auto Win", function(state)
+    autoWinKeyboard = state
+    task.spawn(function()
+        while autoWinKeyboard do
+            task.wait(1.5)
+            pcall(function()
+                local Win = workspace:FindFirstChild("WinPad") or workspace:FindFirstChild("EndPart")
+                if Win and RootPart then RootPart.CFrame = Win.CFrame end
+            end)
+        end
+    end)
+end)
+
+-- SECCIÓN 8: OPTIMIZACIÓN
+CreateSection("Ajustes")
+CreateButton("Eliminar Lag Visual (Subir FPS)", function()
+    pcall(function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") then v.Enabled = false end
+        end
+    end)
+end)
+
+-- LOOPS DE ESTABILIDAD
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if infiniteJump and Humanoid then Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Humanoid then
+            if customSpeed ~= 16 then Humanoid.WalkSpeed = customSpeed end
+            if customJump ~= 50 then Humanoid.UseJumpPower = true Humanoid.JumpPower = customJump end
+        end
+    end
+end)
+
+-- LÓGICA DE MINIMIZAR
+MinimizeBtn.MouseButton1Click:Connect(function() MainPanel.Visible = false FloatingLogo.Visible = true end)
+FloatingLogo.MouseButton1Click:Connect(function() FloatingLogo.Visible = false MainPanel.Visible = true end)
