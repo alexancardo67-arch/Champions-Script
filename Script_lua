@@ -1,4 +1,4 @@
--- [[ SILLET CLIENT V6.0 - ALL-IN-ONE MASTER SCRIPT ]]
+-- [[ SILLET CLIENT V8.0 - ALL-IN-ONE MASTER SCRIPT ]]
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -29,13 +29,23 @@ local infiniteJump = false
 local antiFling = false
 local antiRagdoll = false
 
--- VARIABLES JUEGOS SPECIFICOS
+-- VARIABLES JUEGOS ESPECÍFICOS
 local autoGrabNBA = false
 local autoWinKeyboard = false
 local roleESP = false
 local autoGrabGun = false
 local killAuraMM2 = false
 local autoCoinMM2 = false
+
+-- VARIABLES SHERIFF MM2
+local sheriffSilentAim = false
+local sheriffAutoShoot = false
+local sheriffBigHitbox = false
+
+-- VARIABLES NUEVAS INVISIBLE Y EXTRA
+local invisibleMode = false
+local savedInvisibleCFrame = nil
+local invisibleClone = nil
 
 -- 3. EL LOGO FLOTANTE DE MINIMIZAR ("SC")
 local FloatingLogo = Instance.new("TextButton")
@@ -94,7 +104,7 @@ PanelCorner.Parent = MainPanel
 local TitleBar = Instance.new("TextLabel")
 TitleBar.Size = UDim2.new(1, 0, 0, 40)
 TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-TitleBar.Text = "  SILLET CLIENT V6.0 - Master Multijuegos"
+TitleBar.Text = "  SILLET CLIENT V8.0 - Master Multijuegos"
 TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleBar.TextSize = 16
 TitleBar.Font = Enum.Font.SourceSansBold
@@ -125,7 +135,7 @@ local Container = Instance.new("ScrollingFrame")
 Container.Size = UDim2.new(1, -20, 1, -60)
 Container.Position = UDim2.new(0, 10, 0, 50)
 Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 950) -- Canvas gigante para todas las funciones
+Container.CanvasSize = UDim2.new(0, 0, 0, 1350) -- Canvas más grande para albergar lo nuevo
 Container.ScrollBarThickness = 6
 Container.Parent = MainPanel
 
@@ -192,6 +202,15 @@ local function CreateButton(text, callback)
     Btn.MouseButton1Click:Connect(callback)
 end
 
+local function GetMurderer()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            if p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife") then return p end
+        end
+    end
+    return nil
+end
+
 -- ==========================================
 -- 6. GENERACIÓN DE SECCIONES Y CONTROLES
 -- ==========================================
@@ -206,15 +225,10 @@ end)
 
 CreateToggle("Mega Salto (JumpPower)", function(state)
     if state then customJump = 125 else customJump = 50 end
-    if Humanoid then 
-        Humanoid.UseJumpPower = true
-        Humanoid.JumpPower = customJump 
-    end
+    if Humanoid then Humanoid.UseJumpPower = true Humanoid.JumpPower = customJump end
 end)
 
-CreateToggle("Salto Infinito (Volar)", function(state)
-    infiniteJump = state
-end)
+CreateToggle("Salto Infinito (Volar)", function(state) infiniteJump = state end)
 
 CreateToggle("Escudo Anti-Fling (Inmune)", function(state)
     antiFling = state
@@ -249,8 +263,128 @@ CreateToggle("Anti-Apk / Anti-Ragdoll", function(state)
     end)
 end)
 
--- SECCIÓN 2: MURDER MYSTERY 2
-CreateSection("Murder Mystery 2")
+-- SECCIÓN 2: NUEVO MODO INVISIBLE Y HACKS MM2 AVANZADOS
+CreateSection("Poderes Fantasma / Invisibilidad")
+
+CreateToggle("Modo Invisible Total (Ghost)", function(state)
+    invisibleMode = state
+    pcall(function()
+        if invisibleMode and RootPart then
+            -- Guardar posición real antes de desaparecer
+            savedInvisibleCFrame = RootPart.CFrame
+            
+            -- Romper la conexión física del cuello del avatar para engañar al motor gráfico del server
+            local lowerTorso = Character:FindFirstChild("LowerTorso") or Character:FindFirstChild("Torso")
+            if lowerTorso then
+                local rootJoint = RootPart:FindFirstChild("RootJoint") or lowerTorso:FindFirstChild("RootJoint")
+                if rootJoint then
+                    invisibleClone = rootJoint:Clone()
+                    rootJoint:Destroy() -- Hace que tu cuerpo visual caiga al vacío pero sigues vivo
+                end
+            end
+            
+            -- Mandar tu cuerpo real bajo tierra para recolectar cosas a salvo
+            RootPart.CFrame = savedInvisibleCFrame * CFrame.new(0, -25, 0)
+        else
+            -- Desactivar modo invisible y regresar normal
+            if invisibleClone and RootPart then
+                local lowerTorso = Character:FindFirstChild("LowerTorso") or Character:FindFirstChild("Torso")
+                if lowerTorso then
+                    invisibleClone.Parent = lowerTorso
+                end
+            end
+            if savedInvisibleCFrame and RootPart then
+                RootPart.CFrame = savedInvisibleCFrame
+            end
+        end
+    end)
+end)
+
+CreateButton("⚡ Teleport: Detrás del Asesino", function()
+    pcall(function()
+        local Murderer = GetMurderer()
+        if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") and RootPart then
+            -- Te pone exactamente 3 unidades detrás de su espalda viendo hacia la misma dirección
+            RootPart.CFrame = Murderer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+        end
+    end)
+end)
+
+CreateButton("🔫 Teleport Instantaneo: Agarrar Pistola", function()
+    pcall(function()
+        local Gun = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("PickupGun")
+        if Gun and RootPart then RootPart.CFrame = Gun.CFrame end
+    end)
+end)
+
+-- SECCIÓN 3: FUNCIONES ESPECIALES SHERIFF
+CreateSection("Funciones Especiales Sheriff")
+
+CreateToggle("Silent Aim (Auto-Apuntar al Asesino)", function(state)
+    sheriffSilentAim = state
+    task.spawn(function()
+        while sheriffSilentAim do
+            task.wait(0.1)
+            pcall(function()
+                local Gun = Character:FindFirstChild("Gun")
+                local Murderer = GetMurderer()
+                if Gun and Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") then
+                    workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Murderer.Character.HumanoidRootPart.Position)
+                end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Auto-Shoot (Disparar si se acerca)", function(state)
+    sheriffAutoShoot = state
+    task.spawn(function()
+        while sheriffAutoShoot do
+            task.wait(0.1)
+            pcall(function()
+                local Murderer = GetMurderer()
+                local Gun = Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
+                if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") and Gun and RootPart then
+                    local distance = (RootPart.Position - Murderer.Character.HumanoidRootPart.Position).Magnitude
+                    if distance < 25 and Murderer.Character:FindFirstChild("Knife") then
+                        if Gun.Parent == LocalPlayer.Backpack then Humanoid:EquipTool(Gun) end
+                        task.wait(0.1) Gun:Activate()
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Agrandar Hitbox del Asesino", function(state)
+    sheriffBigHitbox = state
+    task.spawn(function()
+        while sheriffBigHitbox do
+            task.wait(1)
+            pcall(function()
+                local Murderer = GetMurderer()
+                if Murderer and Murderer.Character and Murderer.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetPart = Murderer.Character.HumanoidRootPart
+                    if sheriffBigHitbox then
+                        targetPart.Size = Vector3.new(15, 15, 15) targetPart.Transparency = 0.6 targetPart.Color = Color3.fromRGB(255, 0, 0) targetPart.CanCollide = false
+                    end
+                end
+            end)
+        end
+        if not sheriffBigHitbox then
+            pcall(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1) p.Character.HumanoidRootPart.Transparency = 1
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- SECCIÓN 4: MURDER MYSTERY 2 GENERAL
+CreateSection("Murder Mystery 2 General")
 
 local TargetInput = Instance.new("TextBox")
 TargetInput.Size = UDim2.new(1, -10, 0, 35)
@@ -368,7 +502,7 @@ CreateButton("Escondite Secreto (Ganar AFK)", function()
     end)
 end)
 
--- SECCIÓN 3: NBA CHAMPIONS
+-- SECCIÓN 5: NBA CHAMPIONS
 CreateSection("NBA Champions")
 
 CreateToggle("Auto Auto-Grab Balones", function(state)
@@ -394,7 +528,7 @@ CreateButton("Teleport: Aro Central", function()
     end)
 end)
 
--- SECCIÓN 4: +1 SPEED KEYBOARD ESCAPE
+-- SECCIÓN 6: +1 SPEED KEYBOARD ESCAPE
 CreateSection("Keyboard Escape")
 
 CreateToggle("Auto Win (Farmear Trofeos)", function(state)
@@ -415,7 +549,7 @@ CreateToggle("Auto Win (Farmear Trofeos)", function(state)
     end)
 end)
 
--- SECCIÓN 5: OPTIMIZACIÓN
+-- SECCIÓN 7: OPTIMIZACIÓN
 CreateSection("Ajustes")
 CreateButton("Eliminar Lag Visual (Subir FPS)", function()
     pcall(function()
@@ -440,6 +574,6 @@ task.spawn(function()
     end
 end)
 
--- 7. LÓGICA DE MINIMIZAR
+-- LÓGICA DE MINIMIZAR
 MinimizeBtn.MouseButton1Click:Connect(function() MainPanel.Visible = false FloatingLogo.Visible = true end)
 FloatingLogo.MouseButton1Click:Connect(function() FloatingLogo.Visible = false MainPanel.Visible = true end)
