@@ -1,4 +1,4 @@
--- [[ NBA Champions - SILLET CLIENT V3.0 (NATIVO MÓVIL) ]]
+-- [[ SILLET CLIENT V6.0 - ALL-IN-ONE MASTER SCRIPT ]]
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -11,42 +11,50 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     RootPart = char:WaitForChild("HumanoidRootPart")
 end)
 
--- 1. ELIMINAR MENÚS PREVIOS PARA EVITAR QUE SE DUPLIQUEN
+-- 1. ELIMINAR INTERFACES PREVIAS
 if game:GetService("CoreGui"):FindFirstChild("SilletClientUI") then
     game:GetService("CoreGui").SilletClientUI:Destroy()
 end
 
--- 2. CREACIÓN DE LA INTERFAZ NATIVA (ScreenGui)
+-- 2. CREACIÓN DE LA INTERFAZ NATIVA
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SilletClientUI"
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.ResetOnSpawn = false
 
--- VARIABLES DE ESTADO
-local autoGrab = false
-local autoScore = false
+-- VARIABLES DE CONTROL GENERAL
+local customSpeed = 16
+local customJump = 50
 local infiniteJump = false
-local normalSpeed = 16
-local normalJump = 50
+local antiFling = false
+local antiRagdoll = false
 
--- 3. EL LOGO FLOTANTE (BOTÓN PARA MINIMIZAR / MAXIMIZAR)
+-- VARIABLES JUEGOS SPECIFICOS
+local autoGrabNBA = false
+local autoWinKeyboard = false
+local roleESP = false
+local autoGrabGun = false
+local killAuraMM2 = false
+local autoCoinMM2 = false
+
+-- 3. EL LOGO FLOTANTE DE MINIMIZAR ("SC")
 local FloatingLogo = Instance.new("TextButton")
 FloatingLogo.Name = "FloatingLogo"
 FloatingLogo.Parent = ScreenGui
 FloatingLogo.Size = UDim2.new(0, 60, 0, 60)
 FloatingLogo.Position = UDim2.new(0, 20, 0, 150)
-FloatingLogo.BackgroundColor3 = Color3.fromRGB(130, 50, 200) -- Color Morado Sillet
+FloatingLogo.BackgroundColor3 = Color3.fromRGB(130, 50, 200)
 FloatingLogo.Text = "SC"
 FloatingLogo.TextColor3 = Color3.fromRGB(255, 255, 255)
 FloatingLogo.TextSize = 22
 FloatingLogo.Font = Enum.Font.SourceSansBold
-FloatingLogo.Visible = false -- Inicia oculto mientras el menú está abierto
+FloatingLogo.Visible = false
 
 local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(0, 30) -- Completamente redondo
+LogoCorner.CornerRadius = UDim.new(0, 30)
 LogoCorner.Parent = FloatingLogo
 
--- Hacer el Logo Flotante Arrastrable por la pantalla
+-- Hacer el Logo Flotante Arrastrable
 local UserInputService = game:GetService("UserInputService")
 local dragging, dragInput, dragStart, startPos
 FloatingLogo.InputBegan:Connect(function(input)
@@ -69,26 +77,26 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- 4. EL PANEL PRINCIPAL
+-- 4. PANEL PRINCIPAL
 local MainPanel = Instance.new("Frame")
 MainPanel.Name = "MainPanel"
 MainPanel.Parent = ScreenGui
-MainPanel.Size = UDim2.new(0, 380, 0, 320)
-MainPanel.Position = UDim2.new(0.5, -190, 0.5, -160)
-MainPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainPanel.Size = UDim2.new(0, 390, 0, 360)
+MainPanel.Position = UDim2.new(0.5, -195, 0.5, -180)
+MainPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainPanel.BorderSizePixel = 0
 
 local PanelCorner = Instance.new("UICorner")
 PanelCorner.CornerRadius = UDim.new(0, 12)
 PanelCorner.Parent = MainPanel
 
--- Barra de Título del Panel
+-- Barra de Título
 local TitleBar = Instance.new("TextLabel")
 TitleBar.Size = UDim2.new(1, 0, 0, 40)
-TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-TitleBar.Text = "  SILLET CLIENT V3.0 - NBA Champions"
+TitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+TitleBar.Text = "  SILLET CLIENT V6.0 - Master Multijuegos"
 TitleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleBar.TextSize = 18
+TitleBar.TextSize = 16
 TitleBar.Font = Enum.Font.SourceSansBold
 TitleBar.TextXAlignment = Enum.TextXAlignment.Left
 TitleBar.Parent = MainPanel
@@ -97,7 +105,7 @@ local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 12)
 TitleCorner.Parent = TitleBar
 
--- Botón de Minimizar (Dentro de la barra de título)
+-- Botón de Minimizar
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Size = UDim2.new(0, 40, 0, 30)
 MinimizeBtn.Position = UDim2.new(1, -45, 0, 5)
@@ -112,12 +120,12 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 6)
 MinCorner.Parent = MinimizeBtn
 
--- 5. CONTENEDOR PARA LAS FUNCIONES (ScrollingFrame)
+-- 5. CONTENEDOR DE FUNCIONES (ScrollingFrame)
 local Container = Instance.new("ScrollingFrame")
 Container.Size = UDim2.new(1, -20, 1, -60)
 Container.Position = UDim2.new(0, 10, 0, 50)
 Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 450)
+Container.CanvasSize = UDim2.new(0, 0, 0, 950) -- Canvas gigante para todas las funciones
 Container.ScrollBarThickness = 6
 Container.Parent = MainPanel
 
@@ -126,15 +134,25 @@ UIListLayout.Parent = Container
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 8)
 
--- FUNCIÓN AUXILIAR PARA CREAR BOTONES DE ACTIVACIÓN (TOGGLES)
-local function CreateToggle(name, text, callback)
+-- Funciones Auxiliares de Diseño
+local function CreateSection(text)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -10, 0, 30)
+    Label.BackgroundTransparency = 1
+    Label.Text = "--- " .. string.upper(text) .. " ---"
+    Label.TextColor3 = Color3.fromRGB(160, 100, 240)
+    Label.TextSize = 14
+    Label.Font = Enum.Font.SourceSansBold
+    Label.Parent = Container
+end
+
+local function CreateToggle(text, callback)
     local Btn = Instance.new("TextButton")
-    Btn.Name = name
-    Btn.Size = UDim2.new(1, -10, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    Btn.Size = UDim2.new(1, -10, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     Btn.Text = text .. " [OFF]"
     Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    Btn.TextSize = 16
+    Btn.TextSize = 15
     Btn.Font = Enum.Font.SourceSans
     Btn.Parent = Container
     
@@ -150,7 +168,7 @@ local function CreateToggle(name, text, callback)
             Btn.Text = text .. " [ON]"
             Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         else
-            Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+            Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
             Btn.Text = text .. " [OFF]"
             Btn.TextColor3 = Color3.fromRGB(200, 200, 200)
         end
@@ -158,38 +176,56 @@ local function CreateToggle(name, text, callback)
     end)
 end
 
--- FUNCIÓN AUXILIAR PARA CREAR BOTONES DE ACCIÓN (BUTTONS)
-local function CreateButton(name, text, callback)
+local function CreateButton(text, callback)
     local Btn = Instance.new("TextButton")
-    Btn.Name = name
-    Btn.Size = UDim2.new(1, -10, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+    Btn.Size = UDim2.new(1, -10, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     Btn.Text = text
     Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.TextSize = 16
+    Btn.TextSize = 15
     Btn.Font = Enum.Font.SourceSansBold
     Btn.Parent = Container
     
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 6)
     Corner.Parent = Btn
-    
     Btn.MouseButton1Click:Connect(callback)
 end
 
--- 6. ASIGNACIÓN DE LAS FUNCIONES REALES
+-- ==========================================
+-- 6. GENERACIÓN DE SECCIONES Y CONTROLES
+-- ==========================================
 
--- Toggle 1: Auto Grab Ball
-CreateToggle("ToggleGrab", "Auto Grab & Stole Basketball", function(state)
-    autoGrab = state
+-- SECCIÓN 1: CONTROLES GLOBALES
+CreateSection("Controles de Jugador")
+
+CreateToggle("Super Velocidad (WalkSpeed)", function(state)
+    if state then customSpeed = 50 else customSpeed = 16 end
+    if Humanoid then Humanoid.WalkSpeed = customSpeed end
+end)
+
+CreateToggle("Mega Salto (JumpPower)", function(state)
+    if state then customJump = 125 else customJump = 50 end
+    if Humanoid then 
+        Humanoid.UseJumpPower = true
+        Humanoid.JumpPower = customJump 
+    end
+end)
+
+CreateToggle("Salto Infinito (Volar)", function(state)
+    infiniteJump = state
+end)
+
+CreateToggle("Escudo Anti-Fling (Inmune)", function(state)
+    antiFling = state
     task.spawn(function()
-        while autoGrab do
-            task.wait(0.1)
+        while antiFling do
+            task.wait(0.3)
             pcall(function()
-                for _, obj in pairs(workspace:GetChildren()) do
-                    if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
-                        if RootPart and (RootPart.Position - obj.Position).Magnitude < 70 then
-                            RootPart.CFrame = obj.CFrame
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        for _, part in pairs(p.Character:GetChildren()) do
+                            if part:IsA("BasePart") then part.CanCollide = false end
                         end
                     end
                 end
@@ -198,91 +234,212 @@ CreateToggle("ToggleGrab", "Auto Grab & Stole Basketball", function(state)
     end)
 end)
 
--- Toggle 2: Super Velocidad
-CreateToggle("ToggleSpeed", "Super Velocidad (WalkSpeed X3)", function(state)
-    if state then
-        normalSpeed = 65
-    else
-        normalSpeed = 16
-    end
-    if Humanoid then Humanoid.WalkSpeed = normalSpeed end
-end)
-
--- Toggle 3: Super Salto
-CreateToggle("ToggleJump", "Mega Salto (JumpPower X2)", function(state)
-    if state then
-        normalJump = 120
-    else
-        normalJump = 50
-    end
-    if Humanoid then 
-        Humanoid.UseJumpPower = true
-        Humanoid.JumpPower = normalJump 
-    end
-end)
-
--- Toggle 4: Infinite Jump (Saltar en el aire)
-CreateToggle("ToggleInfJump", "Salto Infinito en el Aire", function(state)
-    infiniteJump = state
-end)
-game:GetService("UserInputService").JumpRequest:Connect(function()
-    if infiniteJump and Humanoid then
-        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- Botón 1: Teleport al Aro Central
-CreateButton("BtnTeleportHoop", "Teleport: Ir al Aro Central", function()
-    pcall(function()
-        local Hoop = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
-        if Hoop and RootPart then
-            RootPart.CFrame = Hoop.CFrame + Vector3.new(0, 3, 0)
-        end
-    end)
-end)
-
--- Botón 2: Teleport al Lobby
-CreateButton("BtnTeleportSpawn", "Teleport: Volver al Lobby", function()
-    pcall(function()
-        local Spawn = workspace:FindFirstChildOfClass("SpawnLocation")
-        if Spawn and RootPart then
-            RootPart.CFrame = Spawn.CFrame + Vector3.new(0, 4, 0)
-        end
-    end)
-end)
-
--- Botón 3: Optimizar FPS / Quitar Animaciones Extra
-CreateButton("BtnNoLag", "Optimizar FPS (Quitar Lag Visual)", function()
-    pcall(function()
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("ParticleEmitter") or v:IsA("Smoke") or v:IsA("Sparkles") then
-                v.Enabled = false
+CreateToggle("Anti-Apk / Anti-Ragdoll", function(state)
+    antiRagdoll = state
+    task.spawn(function()
+        while antiRagdoll do
+            task.wait(0.2)
+            if Humanoid then
+                Humanoid.PlatformStand = false
+                if Humanoid:GetState() == Enum.HumanoidStateType.Ragdoll or Humanoid:GetState() == Enum.HumanoidStateType.FallingDown then
+                    Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                end
             end
         end
     end)
 end)
 
--- Mantener la velocidad y el salto activos de forma forzada si el personaje muere o revive
+-- SECCIÓN 2: MURDER MYSTERY 2
+CreateSection("Murder Mystery 2")
+
+local TargetInput = Instance.new("TextBox")
+TargetInput.Size = UDim2.new(1, -10, 0, 35)
+TargetInput.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+TargetInput.Text = ""
+TargetInput.PlaceholderText = "Nombre de victima para Fling..."
+TargetInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+TargetInput.TextSize = 14
+TargetInput.Font = Enum.Font.SourceSans
+TargetInput.Parent = Container
+Instance.new("UICorner").Parent = TargetInput
+
+CreateButton("💥 Ejecutar Fling Target", function()
+    local targetName = string.lower(TargetInput.Text)
+    local found = nil
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and string.sub(string.lower(p.Name), 1, #targetName) == targetName then found = p break end
+    end
+    if found and found.Character and found.Character:FindFirstChild("HumanoidRootPart") and RootPart then
+        pcall(function()
+            local enemyRoot = found.Character.HumanoidRootPart
+            local oldCFrame = RootPart.CFrame
+            local BV = Instance.new("BodyVelocity") BV.Velocity = Vector3.new(0,0,0) BV.MaxForce = Vector3.new(math.huge,math.huge,math.huge) BV.Parent = RootPart
+            local BAV = Instance.new("BodyAngularVelocity") BAV.AngularVelocity = Vector3.new(0,99999,0) BAV.MaxTorque = Vector3.new(math.huge,math.huge,math.huge) BAV.Parent = RootPart
+            for i = 1, 35 do
+                if enemyRoot then RootPart.CFrame = enemyRoot.CFrame + Vector3.new(0,0.5,0) end
+                task.wait(0.02)
+            end
+            BV:Destroy() BAV:Destroy() RootPart.CFrame = oldCFrame
+        end)
+    end
+end)
+
+CreateToggle("Ver Roles (ESP Paredes)", function(state)
+    roleESP = state
+    task.spawn(function()
+        while roleESP do
+            task.wait(1)
+            pcall(function()
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        local char = p.Character
+                        local box = char:FindFirstChild("RoleHighlight") or Instance.new("Highlight")
+                        box.Name = "RoleHighlight" box.Parent = char box.Adornee = char box.FillTransparency = 0.5
+                        if p.Backpack:FindFirstChild("Knife") or char:FindFirstChild("Knife") then box.FillColor = Color3.fromRGB(255,0,0)
+                        elseif p.Backpack:FindFirstChild("Gun") or char:FindFirstChild("Gun") then box.FillColor = Color3.fromRGB(0,0,255)
+                        else box.FillColor = Color3.fromRGB(0,255,0) end
+                    end
+                end
+            end)
+        end
+        if not roleESP then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character and p.Character:FindFirstChild("RoleHighlight") then p.Character.RoleHighlight:Destroy() end
+            end
+        end
+    end)
+end)
+
+CreateToggle("Auto Recoger Monedas MM2", function(state)
+    autoCoinMM2 = state
+    task.spawn(function()
+        while autoCoinMM2 do
+            task.wait(0.4)
+            pcall(function()
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v.Name == "Coin_SubModel" or v.Name == "Coin" then
+                        if RootPart and v:IsA("BasePart") then RootPart.CFrame = v.CFrame task.wait(0.1) end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Auto Agarrar Pistola Caída", function(state)
+    autoGrabGun = state
+    task.spawn(function()
+        while autoGrabGun do
+            task.wait(0.5)
+            pcall(function()
+                local Gun = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("PickupGun")
+                if Gun and RootPart then RootPart.CFrame = Gun.CFrame end
+            end)
+        end
+    end)
+end)
+
+CreateToggle("Kill Aura (Auto Cuchillo)", function(state)
+    killAuraMM2 = state
+    task.spawn(function()
+        while killAuraMM2 do
+            task.wait(0.1)
+            pcall(function()
+                local Knife = Character:FindFirstChild("Knife")
+                if Knife then
+                    for _, p in pairs(Players:GetPlayers()) do
+                        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            if (RootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude < 16 then Knife:Activate() end
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+CreateButton("Escondite Secreto (Ganar AFK)", function()
+    pcall(function()
+        if RootPart then
+            RootPart.CFrame = CFrame.new(0, 500, 0)
+            local plat = workspace:FindFirstChild("SilletPlatform") or Instance.new("Part")
+            plat.Name = "SilletPlatform" plat.Size = Vector3.new(10, 1, 10) plat.CFrame = CFrame.new(0, 495, 0) plat.Anchored = true plat.Parent = workspace
+        end
+    end)
+end)
+
+-- SECCIÓN 3: NBA CHAMPIONS
+CreateSection("NBA Champions")
+
+CreateToggle("Auto Auto-Grab Balones", function(state)
+    autoGrabNBA = state
+    task.spawn(function()
+        while autoGrabNBA do
+            task.wait(0.1)
+            pcall(function()
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
+                        if RootPart and (RootPart.Position - obj.Position).Magnitude < 70 then RootPart.CFrame = obj.CFrame end
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+CreateButton("Teleport: Aro Central", function()
+    pcall(function()
+        local Hoop = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
+        if Hoop and RootPart then RootPart.CFrame = Hoop.CFrame + Vector3.new(0, 3, 0) end
+    end)
+end)
+
+-- SECCIÓN 4: +1 SPEED KEYBOARD ESCAPE
+CreateSection("Keyboard Escape")
+
+CreateToggle("Auto Win (Farmear Trofeos)", function(state)
+    autoWinKeyboard = state
+    task.spawn(function()
+        while autoWinKeyboard do
+            task.wait(1.5)
+            pcall(function()
+                local Win = workspace:FindFirstChild("WinPad") or workspace:FindFirstChild("EndPart")
+                if not Win then
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v.Name == "WinPart" or v.Name == "GiveWin" then Win = v break end
+                    end
+                end
+                if Win and RootPart then RootPart.CFrame = Win.CFrame end
+            end)
+        end
+    end)
+end)
+
+-- SECCIÓN 5: OPTIMIZACIÓN
+CreateSection("Ajustes")
+CreateButton("Eliminar Lag Visual (Subir FPS)", function()
+    pcall(function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Sparkles") then v.Enabled = false end
+        end
+    end)
+end)
+
+-- LOOPS DE ESTABILIDAD
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if infiniteJump and Humanoid then Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
+end)
+
 task.spawn(function()
     while true do
         task.wait(0.5)
         if Humanoid then
-            Humanoid.WalkSpeed = normalSpeed
-            if normalJump ~= 50 then
-                Humanoid.UseJumpPower = true
-                Humanoid.JumpPower = normalJump
-            end
+            if customSpeed ~= 16 then Humanoid.WalkSpeed = customSpeed end
+            if customJump ~= 50 then Humanoid.UseJumpPower = true Humanoid.JumpPower = customJump end
         end
     end
 end)
 
--- 7. LÓGICA DE MINIMIZAR Y MAXIMIZAR (ACCIONES DE LOS BOTONES)
-MinimizeBtn.MouseButton1Click:Connect(function()
-    MainPanel.Visible = false
-    FloatingLogo.Visible = true
-end)
-
-FloatingLogo.MouseButton1Click:Connect(function()
-    FloatingLogo.Visible = false
-    MainPanel.Visible = true
-end)
+-- 7. LÓGICA DE MINIMIZAR
+MinimizeBtn.MouseButton1Click:Connect(function() MainPanel.Visible = false FloatingLogo.Visible = true end)
+FloatingLogo.MouseButton1Click:Connect(function() FloatingLogo.Visible = false MainPanel.Visible = true end)
