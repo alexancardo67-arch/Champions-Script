@@ -1,16 +1,18 @@
--- [[ NBA Champions - SILLET CLIENT V2.1 ]]
--- Usamos una versión optimizada de Orion que carga al instante en Delta
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+-- [[ NBA Champions - SILLET CLIENT V2.5 ]]
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- Crear la ventana principal sin intro para evitar bloqueos
-local Window = OrionLib:MakeWindow({
-    Name = "SILLET CLIENT V2 - NBA Champions",
-    HidePremium = false,
-    SaveConfig = false,
-    IntroText = "Iniciando..."
+-- Crear la ventana principal (Fluent maneja el botón flotante automáticamente)
+local Window = Fluent:CreateWindow({
+    Title = "SILLET CLIENT V2.5",
+    SubTitle = "by Kevin",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false, -- Desactivado para que no cause lag en tablets/iOS
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl -- Keybind por defecto
 })
 
--- Variables de Control del Jugador
+-- Variables Principales del Jugador
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -24,99 +26,84 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 -- PESTAÑA 1: BALONCESTO
-local MainTab = Window:MakeTab({
-    Name = "Baloncesto",
-    Icon = "rbxassetid://4483345998"
-})
+local Tabs = {
+    Main = Window:AddTab({ Title = "Baloncesto", Icon = "basketball" }),
+    Player = Window:AddTab({ Title = "Jugador", Icon = "user" }),
+    Teleports = Window:AddTab({ Title = "Teleports", Icon = "map-pin" })
+}
 
+-- Funciones de Automatización
 local autoGrab = false
-MainTab:AddToggle({
-    Name = "Auto Grab & Stole Basketball",
-    Default = false,
-    Callback = function(Value)
-        autoGrab = Value
-        task.spawn(function()
-            while autoGrab do
-                task.wait(0.1)
-                pcall(function()
-                    for _, obj in pairs(workspace:GetChildren()) do
-                        if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
-                            local distance = (RootPart.Position - obj.Position).Magnitude
-                            if distance < 60 then
-                                RootPart.CFrame = obj.CFrame
-                            end
+local ToggleGrab = Tabs.Main:AddToggle("AutoGrab", {Title = "Auto Grab & Stole Basketball", Default = false})
+
+ToggleGrab:OnChanged(function()
+    autoGrab = ToggleGrab.Value
+    task.spawn(function()
+        while autoGrab do
+            task.wait(0.1)
+            pcall(function()
+                for _, obj in pairs(workspace:GetChildren()) do
+                    if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
+                        local distance = (RootPart.Position - obj.Position).Magnitude
+                        if distance < 60 then
+                            RootPart.CFrame = obj.CFrame
                         end
                     end
-                end)
-            end
-        end)
-    end
-})
+                end
+            end)
+        end
+    end)
+end)
 
 local autoScore = false
-MainTab:AddToggle({
-    Name = "Auto Meter Pelota (Auto Score)",
-    Default = false,
-    Callback = function(Value)
-        autoScore = Value
-        task.spawn(function()
-            while autoScore do
-                task.wait(0.1)
-                pcall(function()
-                    local Goal = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
-                    if Goal and Character:FindFirstChildOfClass("Tool") then
-                        RootPart.CFrame = Goal.CFrame + Vector3.new(0, 6, 0)
-                    end
-                end)
-            end
-        end)
-    end
-})
+local ToggleScore = Tabs.Main:AddToggle("AutoScore", {Title = "Auto Meter Pelota (Auto Score)", Default = false})
 
--- PESTAÑA 2: JUGADOR
-local PlayerTab = Window:MakeTab({
-    Name = "Jugador",
-    Icon = "rbxassetid://4483345998"
-})
+ToggleScore:OnChanged(function()
+    autoScore = ToggleScore.Value
+    task.spawn(function()
+        while autoScore do
+            task.wait(0.1)
+            pcall(function()
+                local Goal = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
+                if Goal and Character:FindFirstChildOfClass("Tool") then
+                    RootPart.CFrame = Goal.CFrame + Vector3.new(0, 6, 0)
+                end
+            end)
+        end
+    end)
+end)
 
-PlayerTab:AddSlider({
-    Name = "Velocidad (WalkSpeed)",
+-- PESTAÑA 2: MEJORAS DE JUGADOR
+local SliderSpeed = Tabs.Player:AddSlider("SliderSpeed", {
+    Title = "Velocidad (WalkSpeed)",
+    Description = "Ajusta la velocidad de tu personaje",
     Min = 16,
     Max = 150,
     Default = 16,
-    Color = Color3.fromRGB(185, 130, 250),
-    Increment = 1,
-    ValueName = "Speed",
+    Rounding = 0,
     Callback = function(Value)
-        if Humanoid then
-            Humanoid.WalkSpeed = Value
-        end
+        if Humanoid then Humanoid.WalkSpeed = Value end
     end
 })
 
-PlayerTab:AddSlider({
-    Name = "Fuerza de Salto (JumpPower)",
+local SliderJump = Tabs.Player:AddSlider("SliderJump", {
+    Title = "Fuerza de Salto (JumpPower)",
+    Description = "Salta más alto para alcanzar el aro",
     Min = 50,
     Max = 300,
     Default = 50,
-    Color = Color3.fromRGB(185, 130, 250),
-    Increment = 1,
-    ValueName = "Power",
+    Rounding = 0,
     Callback = function(Value)
-        if Humanoid then
-            Humanoid.JumpPower = Value
+        if Humanoid then 
+            Humanoid.UseJumpPower = true
+            Humanoid.JumpPower = Value 
         end
     end
 })
 
 -- PESTAÑA 3: TELEPORTS
-local TeleportTab = Window:MakeTab({
-    Name = "Teleports",
-    Icon = "rbxassetid://4483345998"
-})
-
-TeleportTab:AddButton({
-    Name = "Teleport al Aro Central",
+Tabs.Teleports:AddButton({
+    Title = "Teleport al Aro Central",
     Callback = function()
         pcall(function()
             local Hoop = workspace:FindFirstChild("Hoop")
@@ -125,8 +112,8 @@ TeleportTab:AddButton({
     end
 })
 
-TeleportTab:AddButton({
-    Name = "Teleport al Lobby (Spawn)",
+Tabs.Teleports:AddButton({
+    Title = "Teleport al Lobby (Spawn)",
     Callback = function()
         pcall(function()
             local Spawn = workspace:FindFirstChildOfClass("SpawnLocation")
@@ -135,4 +122,5 @@ TeleportTab:AddButton({
     end
 })
 
-OrionLib:Init()
+-- Seleccionar la primera pestaña al abrir
+Window:SelectTab(1)
