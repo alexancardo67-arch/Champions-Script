@@ -1,112 +1,76 @@
--- [[ SILLET CLIENT v1.0 - MM2 EDITION ]]
+-- SILLET CLIENT v1.0 | MM2 EDITION - FULL LOAD
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
-local RootPart = Character:WaitForChild("HumanoidRootPart")
-local RunService = game:GetService("RunService")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- 1. INTERFAZ
-if game:GetService("CoreGui"):FindFirstChild("SilletUI") then game:GetService("CoreGui").SilletUI:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+-- 1. Eliminar interfaz si ya existe
+if PlayerGui:FindFirstChild("SilletUI") then PlayerGui.SilletUI:Destroy() end
+
+-- 2. Crear la GUI (En PlayerGui para máxima compatibilidad)
+local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SilletUI"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
 
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 300, 0, 400)
-Main.Position = UDim2.new(0.5, -150, 0.5, -200)
-Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Main.Size = UDim2.new(0, 250, 0, 300)
+Main.Position = UDim2.new(0.5, -125, 0.5, -150)
+Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Main.Active = true
+Main.Draggable = true -- Permite moverlo con el dedo
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
 
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
-Instance.new("TextLabel", Main).Text = "SILLET CLIENT v1.0 | MM2"
-Main.TextLabel.Size = UDim2.new(1, 0, 0, 40)
-Main.TextLabel.BackgroundTransparency = 1
-Main.TextLabel.TextColor3 = Color3.new(1, 1, 1)
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "SILLET CLIENT v1.0"
+Title.TextColor3 = Color3.fromRGB(150, 50, 250)
+Title.Font = Enum.Font.SourceSansBold
+Title.BackgroundTransparency = 1
 
 local Container = Instance.new("ScrollingFrame", Main)
-Container.Size = UDim2.new(1, -20, 1, -60)
-Container.Position = UDim2.new(0, 10, 0, 50)
+Container.Size = UDim2.new(1, -10, 1, -50)
+Container.Position = UDim2.new(0, 5, 0, 45)
 Container.BackgroundTransparency = 1
-Container.CanvasSize = UDim2.new(0, 0, 0, 800)
+Container.CanvasSize = UDim2.new(0, 0, 2, 0)
 
-local function CreateToggle(text, callback)
+-- 3. FUNCIONES
+local function AddBtn(text, func)
     local btn = Instance.new("TextButton", Container)
-    btn.Size = UDim2.new(1, 0, 0, 40)
-    btn.Text = text .. " [OFF]"
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    local active = false
-    btn.MouseButton1Click:Connect(function()
-        active = not active
-        btn.Text = text .. (active and " [ON]" or " [OFF]")
-        btn.BackgroundColor3 = active and Color3.fromRGB(100, 50, 200) or Color3.fromRGB(50, 50, 50)
-        callback(active)
-    end)
+    btn.Size = UDim2.new(1, -5, 0, 40)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+    btn.MouseButton1Click:Connect(func)
 end
 
--- 2. FUNCIONES DE MM2
-local function GetMurderer()
+AddBtn("ESP Roles", function()
     for _, p in pairs(Players:GetPlayers()) do
-        if p.Character and (p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")) then return p end
-    end
-end
-
--- 3. MÓDULOS DEL CLIENTE
-CreateToggle("ESP Roles (Visual)", function(s)
-    if s then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                local h = Instance.new("Highlight", p.Character)
-                h.Name = "RoleESP"
-                h.FillColor = (p.Character:FindFirstChild("Knife") or p.Backpack:FindFirstChild("Knife")) and Color3.new(1,0,0) or Color3.new(0,1,0)
-            end
+        if p.Character then
+            local h = Instance.new("Highlight", p.Character)
+            h.FillColor = Color3.new(1, 0, 0)
         end
-    else
-        for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("RoleESP") then p.Character.RoleESP:Destroy() end end
     end
 end)
 
-CreateToggle("Auto-Farm Monedas", function(s)
-    _G.Farm = s
+AddBtn("Auto-Farm Monedas", function()
     task.spawn(function()
-        while _G.Farm do
-            task.wait(0.5)
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "Coin" or v.Name == "Coin_SubModel" then RootPart.CFrame = v:GetPivot() end
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "Coin" or v.Name == "Coin_SubModel" then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = v:GetPivot()
+                task.wait(0.2)
             end
         end
     end)
 end)
 
-CreateToggle("Auto-Aimbot Sheriff", function(s)
-    _G.Aim = s
-    task.spawn(function()
-        while _G.Aim do
-            task.wait(0.1)
-            local m = GetMurderer()
-            if m and m.Character then
-                workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, m.Character.HumanoidRootPart.Position)
-            end
-        end
-    end)
+AddBtn("Fly (Vuelo)", function()
+    local root = LocalPlayer.Character.HumanoidRootPart
+    local bv = Instance.new("BodyVelocity", root)
+    bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bv.Velocity = Vector3.new(0, 50, 0)
+    task.wait(0.5)
+    bv:Destroy()
 end)
 
-CreateToggle("Modo Vuelo (Fly)", function(s)
-    if s then
-        local bv = Instance.new("BodyVelocity", RootPart)
-        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-        _G.Fly = bv
-    else
-        if _G.Fly then _G.Fly:Destroy() end
-    end
-end)
-
-CreateToggle("Anti-AFK", function(s)
-    _G.AFK = s
-    task.spawn(function()
-        while _G.AFK do
-            game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            task.wait(1)
-            game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-            task.wait(60)
-        end
-    end)
-end)
+print("SILLET CLIENT v1.0 cargado con éxito en PlayerGui")
