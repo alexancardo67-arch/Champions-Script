@@ -1,0 +1,78 @@
+-- [[ NBA Champions Premium Script para Delta ]]
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("SILLET CLIENT - NBA Champions", "Midnight")
+
+-- Variables Principales
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+
+-- Actualizar Carácter si muere
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    RootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+-- Pestañas del Menú
+local Tab1 = Window:NewTab("Funciones Principales")
+local Section1 = Tab1:NewSection("Automatizaciones")
+local Tab2 = Window:NewTab("Teleports")
+local Section2 = Tab2:NewSection("Canchas y Aros")
+
+-- [1. FUNCIÓN: AUTO GRAB / ROBAR BALÓN]
+local autoGrab = false
+Section1:NewToggle("Auto Grab & Stole Basketball", "Recoge y roba automáticamente el balón más cercano", function(state)
+    autoGrab = state
+    while autoGrab do
+        task.wait(0.1)
+        pcall(function()
+            -- Busca balones sueltos en el Workspace (ajusta el nombre si el juego usa otro en el Workspace)
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj.Name == "Basketball" or obj:FindFirstChild("Ball") then
+                    local distance = (RootPart.Position - obj.Position).Magnitude
+                    if distance < 50 then -- Radio de acción
+                        RootPart.CFrame = obj.CFrame
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- [2. FUNCIÓN: METER LA PELOTA (AUTO SCORE)]
+local autoScore = false
+Section1:NewToggle("Auto Meter Pelota (Auto Score)", "Teletransporta el balón o a ti al aro rival para anotar", function(state)
+    autoScore = state
+    while autoScore do
+        task.wait(0.1)
+        pcall(function()
+            -- Busca el aro (Hoop) del mapa. Cambia "Hoop" o "Net" según las carpetas del juego.
+            local Goal = workspace:FindFirstChild("Hoop") or workspace:FindFirstChild("Basket")
+            if Goal and Character:FindFirstChildOfClass("Tool") then -- Verifica si tienes la pelota equipada
+                RootPart.CFrame = Goal.CFrame + Vector3.new(0, 5, 0) -- Te posiciona justo arriba del aro
+            end
+        end)
+    end
+end)
+
+-- [3. FUNCIÓN: TELEPORT GENERAL]
+Section2:NewButton("Teleport al Aro Principal", "Te lleva al aro central", function()
+    pcall(function()
+        local Hoop = workspace:FindFirstChild("Hoop")
+        if Hoop then
+            RootPart.CFrame = Hoop.CFrame
+        else
+            Library:Notify("Error", "Aro no encontrado en el mapa", 3)
+        end
+    end)
+end)
+
+Section2:NewButton("Teleport a Zona de Espera (Lobby)", "Regresa a un lugar seguro", function()
+    pcall(function()
+        local Spawn = workspace:FindFirstChildOfClass("SpawnLocation")
+        if Spawn then
+            RootPart.CFrame = Spawn.CFrame + Vector3.new(0, 3, 0)
+        end
+    end)
+end)
