@@ -1,5 +1,5 @@
 --====================================================================--
---[ WSD SCRIPT - RIVALS EDITION V3.0 ] - MOBILE OPTIMIZED
+--[ WSD SCRIPT - RIVALS AUTOMATION V3.5 ] - BYPASS & FIXED UTILITIES
 --====================================================================--
 
 local Players = game:GetService("Players")
@@ -7,37 +7,65 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- State and Configuration Variables
+-- Configuration Tables
 local Toggles = {}
 local Config = {
     FlySpeed = 50,
     WalkSpeed = 32,
-    JumpPower = 50,
+    JumpPower = 75,
     FOV = 90,
-    AimbotFOV = 120
+    AimbotFOV = 150
 }
 local Connections = {}
 
 --====================================================================--
---[ GUI CREATION ]
+--[ CORE ENGINE: BYPASS & UNIVERSAL TARGETING ]
+--====================================================================--
+
+local function IsEnemy(player)
+    if player == LocalPlayer then return false end
+    -- Fallback handling for team structures in competitive matches
+    if player.Team ~= nil and LocalPlayer.Team ~= nil then
+        return player.Team ~= LocalPlayer.Team
+    end
+    return true -- Treat as hostile if team context is obfuscated
+end
+
+local function GetClosestEnemyBody()
+    local target, closestMouseDist = nil, Config.AimbotFOV
+    for _, p in pairs(Players:GetPlayers()) do
+        if IsEnemy(p) and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChildOfClass("Humanoid") then
+            if p.Character.Humanoid.Health > 0 then
+                local pos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+                if onScreen then
+                    local mouseDist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                    if mouseDist < closestMouseDist then
+                        closestMouseDist = mouseDist
+                        target = p.Character.Head
+                    end
+                end
+            end
+        end
+    end
+    return target
+end
+
+--====================================================================--
+--[ INTERFACE FRAMEWORK ]
 --====================================================================--
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "WSD_Script_Rivals"
+ScreenGui.Name = "WSD_Rivals_V35"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local success, err = pcall(function()
-    ScreenGui.Parent = game:GetService("CoreGui")
-end)
-if not success then
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-end
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
--- Fixed Dragging System (Only registers on TopBar)
 local function MakeDraggable(dragFrame, targetFrame)
     local dragging, dragInput, dragStart, startPos
     dragFrame.InputBegan:Connect(function(input)
@@ -46,9 +74,7 @@ local function MakeDraggable(dragFrame, targetFrame)
             dragStart = input.Position
             startPos = targetFrame.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
@@ -65,109 +91,55 @@ local function MakeDraggable(dragFrame, targetFrame)
     end)
 end
 
---====================================================================--
---[ MAIN PANEL ]
---====================================================================--
-
-local MinimizedBtn = Instance.new("TextButton")
-MinimizedBtn.Name = "MinimizedBtn"
-MinimizedBtn.Parent = ScreenGui
-MinimizedBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-MinimizedBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
-MinimizedBtn.Size = UDim2.new(0, 100, 0, 40)
-MinimizedBtn.Font = Enum.Font.GothamBold
-MinimizedBtn.Text = "WSD RIVALS"
-MinimizedBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
-MinimizedBtn.TextSize = 13
-MinimizedBtn.Visible = false
-MinimizedBtn.ZIndex = 10
-
-local MinimizedCorner = Instance.new("UICorner")
-MinimizedCorner.CornerRadius = UDim.new(0, 8)
-MinimizedCorner.Parent = MinimizedBtn
-
-local MinimizedStroke = Instance.new("UIStroke")
-MinimizedStroke.Color = Color3.fromRGB(255, 50, 50)
-MinimizedStroke.Thickness = 1.5
-MinimizedStroke.Parent = MinimizedBtn
-MakeDraggable(MinimizedBtn, MinimizedBtn)
-
---====================================================================--
-
+-- MAIN INTERFACE HOLDER
 local MainHolder = Instance.new("Frame")
 MainHolder.Name = "MainHolder"
 MainHolder.Parent = ScreenGui
-MainHolder.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+MainHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
 MainHolder.Position = UDim2.new(0.5, -240, 0.5, -200)
 MainHolder.Size = UDim2.new(0, 480, 0, 400)
-MainHolder.Visible = true
 
 local HolderCorner = Instance.new("UICorner")
-HolderCorner.CornerRadius = UDim.new(0, 10)
+HolderCorner.CornerRadius = UDim.new(0, 8)
 HolderCorner.Parent = MainHolder
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(255, 50, 50)
+MainStroke.Color = Color3.fromRGB(255, 40, 40)
 MainStroke.Thickness = 2
 MainStroke.Parent = MainHolder
 
--- TOP BAR
+-- TOPBAR (CONTROL ZONE)
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainHolder
-TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+TopBar.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
 TopBar.Size = UDim2.new(1, 0, 0, 35)
 
 local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.CornerRadius = UDim.new(0, 8)
 TopCorner.Parent = TopBar
 
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Size = UDim2.new(0, 250, 1, 0)
+Title.Size = UDim2.new(0, 300, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "WSD SCRIPT - RIVALS v3.0"
+Title.Text = "WSD SCRIPT - RIVALS FIX V3.5"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
+Title.TextSize = 13
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Parent = TopBar
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Position = UDim2.new(1, -35, 0, 0)
-CloseBtn.Size = UDim2.new(0, 35, 1, 0)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
-CloseBtn.TextSize = 16
-
-CloseBtn.MouseButton1Click:Connect(function()
-    MainHolder.Visible = false
-    MinimizedBtn.Visible = true
-end)
-
-MinimizedBtn.MouseButton1Click:Connect(function()
-    MainHolder.Visible = true
-    MinimizedBtn.Visible = false
-end)
-
-MakeDraggable(TopBar, MainHolder)
-
---====================================================================--
---[ CONTENT SCROLLING FRAME ]
---====================================================================--
-
+-- SCROLLING MODULES LIST
 local ContentFrame = Instance.new("ScrollingFrame")
 ContentFrame.Name = "ContentFrame"
 ContentFrame.Parent = MainHolder
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 10, 0, 45)
 ContentFrame.Size = UDim2.new(1, -20, 1, -55)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 1200)
-ContentFrame.ScrollBarThickness = 4
-ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 1100)
+ContentFrame.ScrollBarThickness = 3
+ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 40, 40)
 
 local UIGrid = Instance.new("UIGridLayout")
 UIGrid.Parent = ContentFrame
@@ -175,15 +147,17 @@ UIGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 UIGrid.CellSize = UDim2.new(0, 215, 0, 40)
 UIGrid.SortOrder = Enum.SortOrder.LayoutOrder
 
+MakeDraggable(TopBar, MainHolder)
+
 --====================================================================--
---[ CREATOR FUNCTIONS ]
+--[ UI INTERACTION BUILDERS ]
 --====================================================================--
 
 local function CreateToggle(name, callback)
     local state = false
     local ToggleFrame = Instance.new("Frame")
     ToggleFrame.Parent = ContentFrame
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
     
     local TFCorner = Instance.new("UICorner")
     TFCorner.CornerRadius = UDim.new(0, 6)
@@ -196,14 +170,14 @@ local function CreateToggle(name, callback)
     Label.Size = UDim2.new(1, -55, 1, 0)
     Label.Font = Enum.Font.GothamSemibold
     Label.Text = name
-    Label.TextColor3 = Color3.fromRGB(180, 180, 180)
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
     Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
 
     local Switch = Instance.new("TextButton")
     Switch.Parent = ToggleFrame
     Switch.AnchorPoint = Vector2.new(1, 0.5)
-    Switch.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    Switch.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
     Switch.Position = UDim2.new(1, -8, 0.5, 0)
     Switch.Size = UDim2.new(0, 36, 0, 18)
     Switch.Text = ""
@@ -215,7 +189,7 @@ local function CreateToggle(name, callback)
     local Indicator = Instance.new("Frame")
     Indicator.Parent = Switch
     Indicator.AnchorPoint = Vector2.new(0, 0.5)
-    Indicator.BackgroundColor3 = Color3.fromRGB(120, 120, 125)
+    Indicator.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
     Indicator.Position = UDim2.new(0, 2, 0.5, 0)
     Indicator.Size = UDim2.new(0, 14, 0, 14)
 
@@ -227,12 +201,12 @@ local function CreateToggle(name, callback)
         state = not state
         Toggles[name] = state
         if state then
-            Switch.BackgroundColor3 = Color3.fromRGB(80, 15, 15)
-            Indicator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+            Switch.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
+            Indicator.BackgroundColor3 = Color3.fromRGB(255, 40, 40)
             Indicator.Position = UDim2.new(1, -16, 0.5, 0)
         else
-            Switch.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-            Indicator.BackgroundColor3 = Color3.fromRGB(120, 120, 125)
+            Switch.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+            Indicator.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
             Indicator.Position = UDim2.new(0, 2, 0.5, 0)
         end
         callback(state)
@@ -242,7 +216,7 @@ end
 local function CreateButton(name, callback)
     local Button = Instance.new("TextButton")
     Button.Parent = ContentFrame
-    Button.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Button.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
     Button.Font = Enum.Font.GothamBold
     Button.Text = name
     Button.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -253,7 +227,7 @@ local function CreateButton(name, callback)
     BCorner.Parent = Button
 
     local BStroke = Instance.new("UIStroke")
-    BStroke.Color = Color3.fromRGB(255, 50, 50)
+    BStroke.Color = Color3.fromRGB(255, 40, 40)
     BStroke.Thickness = 1
     BStroke.Parent = Button
 
@@ -263,7 +237,7 @@ end
 local function CreateSlider(name, min, max, default, configKey, callback)
     local SliderFrame = Instance.new("Frame")
     SliderFrame.Parent = ContentFrame
-    SliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
     
     local SFCorner = Instance.new("UICorner")
     SFCorner.CornerRadius = UDim.new(0, 6)
@@ -277,13 +251,12 @@ local function CreateSlider(name, min, max, default, configKey, callback)
     Label.Font = Enum.Font.GothamSemibold
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(180, 180, 180)
-    Label.TextSize = 12
-    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.TextSize = 11
 
     local ValueBox = Instance.new("TextBox")
     ValueBox.Parent = SliderFrame
     ValueBox.AnchorPoint = Vector2.new(1, 0.5)
-    ValueBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    ValueBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     ValueBox.Position = UDim2.new(1, -8, 0.5, 0)
     ValueBox.Size = UDim2.new(0, 45, 0, 22)
     ValueBox.Font = Enum.Font.GothamSemibold
@@ -291,10 +264,6 @@ local function CreateSlider(name, min, max, default, configKey, callback)
     ValueBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     ValueBox.TextSize = 11
     ValueBox.ClearTextOnFocus = false
-
-    local VBCorner = Instance.new("UICorner")
-    VBCorner.CornerRadius = UDim.new(0, 4)
-    VBCorner.Parent = ValueBox
 
     ValueBox.FocusLost:Connect(function()
         local val = tonumber(ValueBox.Text)
@@ -316,85 +285,96 @@ local function CreateHeader(text)
     Header.BackgroundTransparency = 1
     Header.Font = Enum.Font.GothamBold
     Header.Text = "--- " .. text .. " ---"
-    Header.TextColor3 = Color3.fromRGB(255, 50, 50)
-    Header.TextSize = 12
-    Header.TextXAlignment = Enum.TextXAlignment.Center
+    Header.TextColor3 = Color3.fromRGB(255, 40, 40)
+    Header.TextSize = 11
 end
 
 --====================================================================--
---[ RIVALS UTILITIES & TARGETING ]
+--[ EXECUTIONS ENGINE FUNCTIONALITY ]
 --====================================================================--
 
-local function GetClosestEnemy()
-    local closest, dist = nil, math.huge
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Team ~= LocalPlayer.Team and p.Character and p.Character:FindFirstChild("Head") then
-            local pos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
-            if onScreen then
-                local mouseDist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
-                if mouseDist < dist and mouseDist <= Config.AimbotFOV then
-                    dist = mouseDist
-                    closest = p
-                end
-            end
-        end
-    end
-    return closest
-end
-
---====================================================================--
---[ COMBAT & SILLET AIM ]
---====================================================================--
-CreateHeader("COMBAT & SILLET TARGET")
+CreateHeader("SILLET COMBAT SYSTEM")
 
 CreateToggle("SILLET AIMBOT", function(state)
     if state then
-        Connections["SilletAim"] = RunService.RenderStepped:Connect(function()
-            local enemy = GetClosestEnemy()
-            if enemy and enemy.Character and enemy.Character:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, enemy.Character.Head.Position)
+        Connections["EngineAim"] = RunService.RenderStepped:Connect(function()
+            local targetHead = GetClosestEnemyBody()
+            if targetHead then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
             end
         end)
-    elseif Connections["SilletAim"] then
-        Connections["SilletAim"]:Disconnect()
+    elseif Connections["EngineAim"] then
+        Connections["EngineAim"]:Disconnect()
     end
 end)
 
-CreateToggle("SILLET AIMKILL (AutoShoot)", function(state)
+CreateToggle("SILLET AIMKILL", function(state)
     if state then
-        Connections["AimKill"] = RunService.RenderStepped:Connect(function()
-            local enemy = GetClosestEnemy()
-            if enemy and enemy.Character and enemy.Character:FindFirstChild("Head") then
-                -- Simulates trigger pull instantly when tracking a targeted object
-                local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if tool then tool:Activate() end
+        Connections["EngineAimKill"] = RunService.RenderStepped:Connect(function()
+            local targetHead = GetClosestEnemyBody()
+            if targetHead then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+                -- Uses VirtualInput Click Simulation to bypass Weapon Activation locks
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                task.wait(0.02)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
             end
         end)
-    elseif Connections["AimKill"] then
-        Connections["AimKill"]:Disconnect()
+    elseif Connections["EngineAimKill"] then
+        Connections["EngineAimKill"]:Disconnect()
     end
 end)
 
-CreateToggle("NO RECOIL & SPREAD", function(state)
-    -- Modifies script weapon data locally inside Client environment
+CreateToggle("NO RECOIL / SPREAD", function(state)
     if state then
-        Connections["NoRecoil"] = RunService.RenderStepped:Connect(function()
-            local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool and tool:FindFirstChild("Configuration") then
-                for _, v in pairs(tool.Configuration:GetChildren()) do
-                    if v.Name:find("Recoil") or v.Name:find("Spread") then v.Value = 0 end
+        Connections["EngineRecoil"] = RunService.RenderStepped:Connect(function()
+            pcall(function()
+                for _, v in pairs(game:GetDescendants()) do
+                    if v:IsA("NumberValue") and (v.Name:lower():find("recoil") or v.Name:lower():find("spread")) then
+                        v.Value = 0
+                    end
                 end
-            end
+            end)
         end)
-    elseif Connections["NoRecoil"] then
-        Connections["NoRecoil"]:Disconnect()
+    elseif Connections["EngineRecoil"] then
+        Connections["EngineRecoil"]:Disconnect()
     end
 end)
 
 --====================================================================--
-CreateHeader("MOVEMENT & CORES")
+CreateHeader("BYPASS VISUALS (ESP)")
 
-CreateToggle("FLY", function(state)
+CreateToggle("ESP CHAMPS", function(state)
+    if state then
+        Connections["EngineChamps"] = RunService.RenderStepped:Connect(function()
+            for _, p in pairs(Players:GetPlayers()) do
+                if IsEnemy(p) and p.Character then
+                    if not p.Character:FindFirstChild("WSDHighlights") then
+                        local highlight = Instance.new("Highlight")
+                        highlight.Name = "WSDHighlights"
+                        highlight.Parent = p.Character
+                        highlight.FillColor = Color3.fromRGB(255, 40, 40)
+                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        highlight.FillTransparency = 0.3
+                        highlight.OutlineTransparency = 0
+                    end
+                end
+            end
+        end)
+    else
+        if Connections["EngineChamps"] then Connections["EngineChamps"]:Disconnect() end
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("WSDHighlights") then
+                p.Character.WSDHighlights:Destroy()
+            end
+        end
+    end
+end)
+
+--====================================================================--
+CreateHeader("MOVEMENT / LOCOMOTION")
+
+CreateToggle("FLY ACTIVATED", function(state)
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if state and root then
@@ -408,7 +388,7 @@ CreateToggle("FLY", function(state)
         bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
         
         Connections["FlyLoop"] = RunService.RenderStepped:Connect(function()
-            if Toggles["FLY"] and char and root then
+            if Toggles["FLY ACTIVATED"] and char and root then
                 local moveDir = char.Humanoid.MoveDirection
                 local vel = Vector3.new(0, 0, 0)
                 if moveDir.Magnitude > 0 then
@@ -426,99 +406,84 @@ CreateToggle("FLY", function(state)
         Connections["FlyLoop"]:Disconnect()
     end
 end)
-CreateSlider("Set Fly Speed", 10, 150, 50, "FlySpeed", function() end)
+CreateSlider("Fly Speed Set", 10, 150, 50, "FlySpeed", function() end)
 
-CreateToggle("SPEED HACK", function(state)
+CreateToggle("SPEED AUTOMATION", function(state)
     if state then
-        Connections["SpeedLoop"] = RunService.RenderStepped:Connect(function()
-            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = Config.WalkSpeed end
+        Connections["EngineSpeed"] = RunService.RenderStepped:Connect(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = Config.WalkSpeed
+            end
         end)
     else
-        if Connections["SpeedLoop"] then Connections["SpeedLoop"]:Disconnect() end
-        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.WalkSpeed = 16 end
+        if Connections["EngineSpeed"] then Connections["EngineSpeed"]:Disconnect() end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+        end
     end
 end)
-CreateSlider("Set Walk Speed", 16, 100, 32, "WalkSpeed", function() end)
+CreateSlider("Walk Speed Set", 16, 100, 32, "WalkSpeed", function() end)
 
 CreateToggle("SUPER JUMP", function(state)
     if state then
-        Connections["JumpLoop"] = RunService.RenderStepped:Connect(function()
-            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then hum.JumpPower = Config.JumpPower end
+        Connections["EngineJump"] = RunService.RenderStepped:Connect(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = Config.JumpPower
+            end
         end)
     else
-        if Connections["JumpLoop"] then Connections["JumpLoop"]:Disconnect() end
-        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.JumpPower = 50 end
+        if Connections["EngineJump"] then Connections["EngineJump"]:Disconnect() end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
+        end
     end
 end)
-CreateSlider("Set Jump Power", 50, 150, 75, "JumpPower", function() end)
+CreateSlider("Jump Height Set", 50, 150, 75, "JumpPower", function() end)
 
 CreateToggle("INFINITE JUMP", function(state)
     if state then
-        Connections["InfJump"] = UserInputService.JumpRequest:Connect(function()
+        Connections["EngineInfJump"] = UserInputService.JumpRequest:Connect(function()
             local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
             if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
         end)
-    elseif Connections["InfJump"] then
-        Connections["InfJump"]:Disconnect()
+    elseif Connections["EngineInfJump"] then
+        Connections["EngineInfJump"]:Disconnect()
     end
 end)
 
 --====================================================================--
-CreateHeader("VISUALS & ENVIRONMENT")
+CreateHeader("SETTINGS / SKINS UTILITY")
 
-CreateSlider("Set FOV", 60, 120, 90, "FOV", function(val) Camera.FieldOfView = val end)
-
-CreateToggle("ESP CHAMPS", function(state)
-    if state then
-        Connections["ChampsLoop"] = RunService.RenderStepped:Connect(function()
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Team ~= LocalPlayer.Team and p.Character then
-                    if not p.Character:FindFirstChild("WSDChamps") then
-                        local h = Instance.new("Highlight", p.Character)
-                        h.Name = "WSDChamps"
-                        h.FillColor = Color3.fromRGB(255, 0, 50)
-                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
-                        h.FillTransparency = 0.4
-                        h.OutlineTransparency = 0
-                    end
-                end
-            end
-        end)
-    else
-        if Connections["ChampsLoop"] then Connections["ChampsLoop"]:Disconnect() end
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("WSDChamps") then
-                p.Character.WSDChamps:Destroy()
-            end
-        end
-    end
-end)
-
---====================================================================--
-CreateHeader("TELEPORTS & SKIN UTIL")
+CreateSlider("Camera FOV Range", 60, 120, 90, "FOV", function(val) Camera.FieldOfView = val end)
 
 CreateButton("TELEPORT BASE", function()
-    -- Safely returns player to map safe zone spawn sectors
     local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local spawnPart = Workspace:FindFirstChild("SpawnLocation", true) or Workspace:FindFirstChild("Spawn", true)
-    if root and spawnPart then
-        root.CFrame = spawnPart.CFrame + Vector3.new(0, 4, 0)
+    local spawn = Workspace:FindFirstChild("SpawnLocation", true) or Workspace:FindFirstChild("Spawn", true)
+    if root and spawn then
+        root.CFrame = spawn.CFrame + Vector3.new(0, 5, 0)
     elseif root then
-        root.CFrame = CFrame.new(0, 100, 0) -- Sky platform fallback if no map assets are indexed
+        root.CFrame = CFrame.new(0, 120, 0)
     end
 end)
 
-CreateButton("UNLOCK ALL ARMAS (Visual)", function()
-    -- Re-inventories local weapon visual assets inside current execution instance
-    local replicatedStorage = game:GetService("ReplicatedStorage")
-    if replicatedStorage:FindFirstChild("Weapons") then
-        for _, w in pairs(replicatedStorage.Weapons:GetChildren()) do
-            local owns = w:FindFirstChild("Owns") or w:FindFirstChild("Unlocked")
-            if owns and owns:IsA("BoolValue") then owns.Value = true end
+CreateButton("UNLOCK ALL ARMAS", function()
+    -- Universal Skin Invalidation Bypass across known memory tables
+    pcall(function()
+        -- Method 1: Replicated Storage Inventory Parsing
+        local rep = game:GetService("ReplicatedStorage")
+        for _, obj in pairs(rep:GetDescendants()) do
+            if obj:IsA("BoolValue") and (obj.Name:lower():find("own") or obj.Name:lower():find("unlock")) then
+                obj.Value = true
+            end
         end
-    end
+        -- Method 2: Local Script State Invalidation
+        for _, child in pairs(LocalPlayer:GetDescendants()) do
+            if child:IsA("ModuleScript") and child.Name:lower():find("skin") then
+                local module = require(child)
+                if type(module) == "table" then
+                    for k, v in pairs(module) do if type(v) == "boolean" then module[k] = true end end
+                end
+            end
+        end
+    end)
 end)
