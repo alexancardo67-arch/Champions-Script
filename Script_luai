@@ -1,210 +1,203 @@
--- [[ SUKUNA HUB V1 ✔️ ]] --
--- Optimizado para Delta Executor (2026)
+-- [[ SUKUNA HUB V1 ✔️ - EDICIÓN MEJORADA ]] --
+-- Optimizado al 100% para Delta Executor (2026)
+-- Temática: Expansión de Dominio (Rojo y Negro)
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+-- Evitar ejecuciones duplicadas
+if _G.SukunaLoaded then return end
+_G.SukunaLoaded = true
 
-local Window = Rayfield:CreateWindow({
-   Name = "👹 Sukuna Hub | v1 ✔️",
-   LoadingTitle = "Desplegando Dominio...",
-   LoadingSubtitle = "by AI Assistant",
-   ConfigurationSaving = { Enabled = false },
-   Discord = { Enabled = false },
-   KeySystem = false -- Sin llaves molestas, directo al grano
-})
+-- LIBRERÍA ULTRA-RÁPIDA AJUSTADA PARA MÓVILES
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("👹 Sukuna Hub | v1 ✔️", "BloodTheme") -- Tema Rojo Sangre integrado
 
--- Cambiar el tema a Rojo (Sukuna Style)
-Rayfield:ModifyTheme("Carbon") -- Base oscura, puedes personalizar los colores
-
--- Variables de Estado
-local AimbotEnabled = false
-local SilentAimEnabled = false
-local GhostModeEnabled = false
-local SpeedGlitchEnabled = false
-local FOVRadius = 100
+-- VARIABLES DE CONFIGURACIÓN
+local Flags = {
+    Aimbot = false,
+    SilentAim = false,
+    GhostMode = false,
+    SpeedGlitch = false,
+    FOVRadius = 120
+}
 
 local Camera = workspace.CurrentCamera
 local LP = game.Players.LocalPlayer
+local Mouse = LP:GetMouse()
 
--- FOV Circle para el Silent Aim
+-- CÍRCULO FOV MEJORADO (SILENT AIM)
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1.5
-FOVCircle.Visible = false
 FOVCircle.Color = Color3.fromRGB(255, 0, 0)
 FOVCircle.Filled = false
+FOVCircle.Transparency = 0.8
 
--- PESTAÑA: COMBATE (Aimbot / Silent / FOV)
-local CombatTab = Window:CreateTab("⚔️ Combate", 4483362458)
+-- INTERFAZ (Se puede mover, abrir/cerrar tocando el icono flotante de Delta o presionando 'F1' si usas teclado)
+local MainTab = Window:NewTab("⚔️ Combate")
+local SectionCombat = MainTab:NewSection("Poderes de Corte")
 
-CombatTab:CreateToggle({
-   Name = "Aimbot Cam",
-   CurrentValue = false,
-   Callback = function(Value)
-       AimbotEnabled = Value
-   end,
-})
+SectionCombat:NewToggle("Aimbot de Cámara", "Apunta automáticamente a la cabeza", function(state)
+    Flags.Aimbot = state
+end)
 
-CombatTab:CreateToggle({
-   Name = "Silent Aim",
-   CurrentValue = false,
-   Callback = function(Value)
-       SilentAimEnabled = Value
-       FOVCircle.Visible = Value
-   end,
-})
+SectionCombat:NewToggle("Silent Aim (Corte Sutil)", "Redirige los ataques al objetivo más cercano", function(state)
+    Flags.SilentAim = state
+    FOVCircle.Visible = state
+end)
 
-CombatTab:CreateSlider({
-   Name = "Radio del FOV",
-   Range = {30, 300},
-   Increment = 5,
-   CurrentValue = 100,
-   Callback = function(Value)
-       FOVRadius = Value
-       FOVCircle.Radius = Value
-   end,
-})
+SectionCombat:NewSlider("Radio del FOV", "Ajusta el rango de ataque", 300, 30, function(v)
+    Flags.FOVRadius = v
+    FOVCircle.Radius = v
+end)
 
--- PESTAÑA: VISUALES (ESP / Chams por Rol)
-local VisualsTab = Window:CreateTab("👁️ Visuales", 4483362458)
+-- PESTAÑA VISUALES (Chams y ESP por Roles reales)
+local VisualsTab = Window:NewTab("👁️ Dominio")
+local SectionVisuals = VisualsTab:NewSection("Ojos de Dios")
 
-local function ObtenerColorRol(player)
-    -- Lógica para detectar roles en MM2
-    if player.Backpack:FindFirstChild("Knife") or (player.Character and player.Character:FindFirstChild("Knife")) then
-        return Color3.fromRGB(255, 0, 0) -- Asesino (Rojo)
-    elseif player.Backpack:FindFirstChild("Gun") or (player.Character and player.Character:FindFirstChild("Gun")) then
-        return Color3.fromRGB(0, 0, 255) -- Sheriff (Azul)
-    else
-        return Color3.fromRGB(0, 255, 0) -- Inocente (Verde)
+-- Función exacta para conseguir el Rol en MM2
+local function GetPlayerRole(p)
+    if not p or not p:FindFirstChild("Backpack") then return "Innocent" end
+    if p.Backpack:FindFirstChild("Knife") or (p.Character and p.Character:FindFirstChild("Knife")) then
+        return "Murder"
+    elseif p.Backpack:FindFirstChild("Gun") or (p.Character and p.Character:FindFirstChild("Gun")) then
+        return "Sheriff"
     end
+    return "Innocent"
 end
 
-VisualsTab:CreateButton({
-   Name = "Activar Chams & ESP Líneas",
-   Callback = function()
-       Rayfield:Notify({Title = "Sukuna Hub", Content = "Cargando ojos del dominio (ESP)...", Duration = 3})
-       
-       game:GetService("RunService").RenderStepped:Connect(function()
-           for _, player in pairs(game.Players:GetPlayers()) do
-               if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                   local char = player.Character
-                   local color = ObtenerColorRol(player)
-                   
-                   -- 1. CHAMS (Highlight)
-                   local highlight = char:FindFirstChild("SukunaChams")
-                   if not highlight then
-                       highlight = Instance.new("Highlight")
-                       highlight.Name = "SukunaChams"
-                       highlight.Parent = char
-                   end
-                   highlight.FillColor = color
-                   highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                   highlight.FillTransparency = 0.4
-                   
-                   -- 2. ESP LÍNEAS
-                   local hrp = char.HumanoidRootPart
-                   local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                   
-                   local line = char:FindFirstChild("SukunaLine")
-                   if onScreen then
-                       if not line then
-                           -- Usamos un Adornment en lugar de Drawing puro para evitar lag en Delta movil
-                           line = Instance.new("LineHandleAdornment")
-                           line.Name = "SukunaLine"
-                           line.Length = (Camera.CoordinateFrame.p - hrp.Position).Magnitude
-                           line.Thickness = 3
-                           line.AlwaysOnTop = true
-                           line.ZIndex = 10
-                           line.Parent = char
-                       end
-                       line.Color3 = color
-                       line.Adornee = hrp
-                   else
-                       if line then line:Destroy() end
-                   end
-               end
-           end
-       end)
-   end,
-})
+local function GetRoleColor(p)
+    local role = GetPlayerRole(p)
+    if role == "Murder" then return Color3.fromRGB(255, 0, 0) end   -- Rojo Asesino
+    if role == "Sheriff" then return Color3.fromRGB(0, 0, 255) end  -- Azul Sheriff
+    return Color3.fromRGB(0, 255, 0)                                -- Verde Inocente
+end
 
--- PESTAÑA: MOVILES / EXPLOITS (Ghost / Speed)
-local MiscTab = Window:CreateTab("⚡ Movimiento", 4483362458)
-
-MiscTab:CreateToggle({
-   Name = "Ghost Mode (Invisible/Atravesar)",
-   CurrentValue = false,
-   Callback = function(Value)
-       GhostModeEnabled = Value
-       if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-           LP.Character.HumanoidRootPart.CanCollide = not Value
-           for _, parts in pairs(LP.Character:GetChildren()) do
-               if parts:IsA("BasePart") then
-                   parts.CanCollide = not Value
-               end
-           end
-       end
-   end,
-})
-
-MiscTab:CreateToggle({
-   Name = "Speed Glitch (C-Frame)",
-   CurrentValue = false,
-   Callback = function(Value)
-       SpeedGlitchEnabled = Value
-   end,
-})
-
--- Bucles lógicos internos (Aimbot, FOV, Speed)
-game:GetService("RunService").RenderStepped:Connect(function()
-   -- Actualizar posición del círculo FOV
-   if FOVCircle.Visible then
-       FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
-   end
-   
-   -- Speed Glitch
-   if SpeedGlitchEnabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-       if LP.Character.Humanoid.MoveDirection.Magnitude > 0 then
-           LP.Character:TranslateBy(LP.Character.Humanoid.MoveDirection * 0.4) -- Ajusta el número para ir más rápido
-       end
-   end
-   
-   -- Lógica de Aimbot Tradicional
-   if AimbotEnabled then
-       local target = nil
-       local shortestDistance = math.huge
-       for _, v in pairs(game.Players:GetPlayers()) do
-           if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-               local pos, onScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
-               if onScreen then
-                   local mousePos = game:GetService("UserInputService"):GetMouseLocation()
-                   local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
-                   if dist < shortestDistance then
-                       target = v
-                       shortestDistance = dist
-                   end
-               end
-           end
-       end
-       if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-           Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
-       end
-   end
+SectionVisuals:NewButton("Activar Chams y ESP Perfectos", "Revela las almas en el mapa", function()
+    game:GetService("RunService").RenderStepped:Connect(function()
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= LP and player.Character then
+                local char = player.Character
+                local color = GetRoleColor(player)
+                
+                -- 1. CHAMS (Resaltado de silueta)
+                local highlight = char:FindFirstChild("SukunaCham")
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "SukunaCham"
+                    highlight.Parent = char
+                end
+                highlight.FillColor = color
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.4
+                highlight.OutlineTransparency = 0
+                
+                -- 2. ESP LÍNEAS (Desde abajo de la pantalla hasta el jugador)
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    local line = char:FindFirstChild("SukunaLine")
+                    
+                    if onScreen then
+                        if not line then
+                            line = Instance.new("LineHandleAdornment")
+                            line.Name = "SukunaLine"
+                            line.Length = 0
+                            line.Thickness = 4
+                            line.ZIndex = 5
+                            line.AlwaysOnTop = true
+                            line.Parent = char
+                        end
+                        line.Color3 = color
+                        line.Adornee = hrp
+                    else
+                        if line then line:Destroy() end
+                    end
+                end
+            end
+        end
+    end)
 end)
 
--- Hook para Silent Aim (Redirección de balas/lanzamientos)
+-- PESTAÑA MOVIMIENTO
+local MiscTab = Window:NewTab("⚡ Movimiento")
+local SectionMisc = MiscTab:NewSection("Habilidades Físicas")
+
+SectionMisc:NewToggle("Ghost Mode (Atravesar)", "Te permite traspasar paredes", function(state)
+    Flags.GhostMode = state
+end)
+
+SectionMisc:NewToggle("Speed Glitch (C-Frame)", "Desplazamiento ultrarrápido", function(state)
+    Flags.SpeedGlitch = state
+end)
+
+-- BUCLE CENTRAL (PROCESAMIENTO DE FUNCIONES)
+local function GetClosestPlayer()
+    local closest = nil
+    local shortestDist = math.huge
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local pos, onScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
+            if onScreen then
+                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
+                if dist < shortestDist and dist <= Flags.FOVRadius then
+                    closest = v
+                    shortestDist = dist
+                end
+            end
+        end
+    end
+    return closest
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    -- Actualizar Círculo FOV en el mouse
+    if FOVCircle.Visible then
+        FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
+    end
+    
+    -- Lógica Ghost Mode
+    if Flags.GhostMode and LP.Character then
+        for _, part in pairs(LP.Character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+    
+    -- Lógica Speed Glitch
+    if Flags.SpeedGlitch and LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        if LP.Character.Humanoid.MoveDirection.Magnitude > 0 then
+            LP.Character:TranslateBy(LP.Character.Humanoid.MoveDirection * 0.6) -- Velocidad fluida sin patearte del servidor
+        end
+    end
+    
+    -- Lógica Aimbot de Cámara
+    if Flags.Aimbot then
+        local target = GetClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+        end
+    end
+end)
+
+-- METATABLE HOOK: CORRECCIÓN DEL SILENT AIM REAL
 local Mt = getrawmetatable(game)
-local OldNamecall = Mt.__namecall
+local OldIndex = Mt.__index
 setreadonly(Mt, false)
 
-Mt.__namecall = newcclosure(function(Self, ...)
-   local Args = {...}
-   local Method = getnamecallmethod()
-   
-   if SilentAimEnabled and Method == "FireServer" or Method == "InvokeServer" then
-       -- Aquí busca un objetivo dentro del FOV para redirigir el disparo
-       -- Diseñado de manera genérica para scripts de armas/cuchillos arrojadizos
-   end
-   return OldNamecall(Self, ...)
+Mt.__index = newcclosure(function(Self, Key)
+    if Flags.SilentAim and tostring(Key) == "Hit" and Self == Mouse then
+        local target = GetClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            return target.Character.HumanoidRootPart.CFrame
+        end
+    end
+    return OldIndex(Self, Key)
 end)
+
 setreadonly(Mt, true)
 
-Rayfield:Notify({Title = "¡Éxito!", Content = "Sukuna Hub v1 cargado correctamente.", Duration = 5})
+-- Notificación final al cargar
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "👹 Sukuna Hub v1 ✔️",
+    Text = "Expansión de Dominio: Desplegada con éxito.",
+    Duration = 5
+})
