@@ -1,0 +1,241 @@
+-- [[ SUKUNA V2 PREMIUM - MURDER MYSTERY 2 ]] --
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Sukuna V2 (Premium)",
+    SubTitle = "MM2 Android Edition",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false, -- Desactivado para mejorar FPS en celulares gama media/baja
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Servicios
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+-- Variables de Estado
+local ESP_Enabled = false
+local SilentAim_Enabled = false
+local AutoGrab_Enabled = false
+local FOV_Radius = 120
+
+-- Círculo de FOV Estilizado
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1.5
+FOVCircle.Filled = false
+FOVCircle.Color = Color3.fromRGB(163, 0, 255) -- Color Morado Sukuna
+FOVCircle.Visible = false
+
+-- Pestañas
+local Tabs = {
+    Visuals = Window:AddTab({ Title = "Visuales", Icon = "eye" }),
+    Combat = Window:AddTab({ Title = "Combate", Icon = "crosshair" }),
+    Misc = Window:AddTab({ Title = "Extras Mod", Icon = "star" })
+}
+
+--- ==========================================
+--- 👁️ SISTEMA ESP TOTALMENTE OPTIMIZADO
+--- ==========================================
+local function GetPlayerRole(player)
+    if not player then return "Innocent" end
+    
+    -- Detección por ítems en mano o mochila
+    local char = player.Character
+    if (char and char:FindFirstChild("Knife")) or player.Backpack:FindFirstChild("Knife") then
+        return "Murder"
+    elseif (char and char:FindFirstChild("Gun")) or player.Backpack:FindFirstChild("Gun") then
+        return "Sheriff"
+    end
+    
+    -- Detección por variables internas de MM2
+    local pd = player:FindFirstChild("PlayerData") or player:FindFirstChild("temp")
+    if pd and pd:FindFirstChild("Role") then
+        local r = pd.Role.Value
+        if r == "Murderer" then return "Murder" end
+        if r == "Sheriff" or r == "Hero" then return "Sheriff" end
+    end
+    return "Innocent"
+end
+
+local function ApplyHighlight(player)
+    if player == LocalPlayer then return end
+    
+    local function ManageCharacter(char)
+        if not char then return end
+        
+        local hl = char:FindFirstChild("SukunaHighlight")
+        if not hl then
+            hl = Instance.new("Highlight")
+            hl.Name = "SukunaHighlight"
+            hl.Parent = char
+        end
+        
+        hl.FillOpacity = 0.35
+        hl.OutlineOpacity = 0.85
+        
+        local role = GetPlayerRole(player)
+        if role == "Murder" then
+            hl.FillColor = Color3.fromRGB(255, 20, 20)      -- Rojo Vivo
+            hl.OutlineColor = Color3.fromRGB(255, 0, 0)
+        elseif role == "Sheriff" then
+            hl.FillColor = Color3.fromRGB(20, 20, 255)     -- Azul Eléctrico
+            hl.OutlineColor = Color3.fromRGB(0, 0, 255)
+        else
+            hl.FillColor = Color3.fromRGB(20, 255, 20)     -- Verde Esmeralda
+            hl.OutlineColor = Color3.fromRGB(0, 255, 0)
+        end
+        hl.Adornee = char
+        hl.Enabled = ESP_Enabled
+    end
+
+    player.CharacterAdded:Connect(ManageCharacter)
+    if player.Character then ManageCharacter(player.Character) end
+end
+
+Tabs.Visuals:AddToggle("ESPToggle", {
+    Title = "Activar ESP Inteligente",
+    Default = false,
+    Callback = function(Value)
+        ESP_Enabled = Value
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("SukunaHighlight") then
+                p.Character.SukunaHighlight.Enabled = Value
+            end
+        end
+    end
+})
+
+-- Asignar ESP a jugadores actuales y nuevos
+for _, p in pairs(Players:GetPlayers()) do ApplyHighlight(p) end
+Players.PlayerAdded:Connect(ApplyHighlight)
+
+--- ==========================================
+--- 🎯 SILENT AIM SIN FALLAS (FOV ADAPTATIVO)
+--- ==========================================
+Tabs.Combat:AddToggle("SilentAimToggle", {
+    Title = "Silent Aim (Tiro Asistido)",
+    Default = false,
+    Callback = function(Value)
+        SilentAim_Enabled = Value
+        FOVCircle.Visible = Value
+    end
+})
+
+Tabs.Combat:AddSlider("FOVSlider", {
+    Title = "Tamaño del FOV",
+    Min = 50, Max = 400, Default = 120, Rounding = 0,
+    Callback = function(Value) FOV_Radius = Value end
+})
+
+RunService.RenderStepped:Connect(function()
+    if FOVCircle.Visible then
+        FOVCircle.Radius = FOV_Radius
+        FOVCircle.Position = UIS:GetMouseLocation()
+    end
+end)
+
+local function GetClosestTarget()
+    local Target = nil
+    local ShortestDistance = FOV_Radius
+    local MousePos = UIS:GetMouseLocation()
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            local Head = p.Character:FindFirstChild("Head")
+            if Head then
+                local Pos, OnScreen = Camera:WorldToViewportPoint(Head.Position)
+                if OnScreen then
+                    local Distance = (Vector2.new(Pos.X, Pos.Y) - MousePos).Magnitude
+                    if Distance < ShortestDistance then
+                        ShortestDistance = Distance
+                        Target = Head
+                    end
+                end
+            end
+        end
+    end
+    return Target
+end
+
+-- Hook de Redirección Metamétodo para Delta Executor
+local OldNameCall
+OldNameCall = hookmetamethod(game, "__namecall", function(Self, ...)
+    local Args = {...}
+    local Method = getnamecallmethod()
+    
+    if SilentAim_Enabled and Method == "FireServer" and tostring(Self) == "Shoot" then
+        local TargetHead = GetClosestTarget()
+        if TargetHead then
+            Args[1] = TargetHead.Position -- Forza el tiro exactamente a la cabeza
+            return OldNameCall(Self, unpack(Args))
+        end
+    end
+    return OldNameCall(Self, ...)
+end)
+
+--- ==========================================
+--- 🔫 AUTO-GRAB GUN & MANUAL TELEPORT
+--- ==========================================
+local function TeleportToGun()
+    local GunPart = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun")
+    if not GunPart then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj.Name == "GunDrop" then GunPart = obj break end
+        end
+    end
+
+    if GunPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        local OldCFrame = hrp.CFrame
+        
+        -- Bypass de velocidad: Va, espera una milésima y regresa
+        hrp.CFrame = GunPart.CFrame + Vector3.new(0, 2, 0)
+        task.wait(0.25)
+        hrp.CFrame = OldCFrame
+    end
+end
+
+Tabs.Misc:AddToggle("AutoGrabToggle", {
+    Title = "Auto-Grab Gun (Automático)",
+    Description = "Te lleva por el arma al instante si el Sheriff muere.",
+    Default = false,
+    Callback = function(Value) AutoGrab_Enabled = Value end
+})
+
+Tabs.Misc:AddButton({
+    Title = "Teletransportar a Arma (Manual)",
+    Callback = TeleportToGun
+})
+
+-- Bucle rápido en segundo plano para el Auto-Grab
+task.spawn(function()
+    while task.wait(0.1) do
+        if AutoGrab_Enabled then
+            local GunPart = workspace:FindFirstChild("GunDrop") or workspace:FindFirstChild("Gun")
+            if GunPart then
+                TeleportToGun()
+                task.wait(2) -- Cooldown para evitar bucles locos si se bugea
+            end
+        end
+    end
+end)
+
+-- Bucle para actualizar roles en tiempo real por si cambian a mitad de partida
+task.spawn(function()
+    while task.wait(2) do
+        if ESP_Enabled then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character then ApplyHighlight(p) end
+            end
+        end
+    end
+end)
+
+Fluent:Notify({ Title = "Sukuna V2", Content = "¡Script cargado con éxito!", Duration = 4 })
+Window:SelectTab(1)
