@@ -1,5 +1,5 @@
 --====================================================================--
---[ WSD SCRIPT - MM2 V2.5 ] - TOTAL CONSOLIDATION & FIXED INTERACTION
+--[ WSD SCRIPT - RIVALS EDITION V3.0 ] - MOBILE OPTIMIZED
 --====================================================================--
 
 local Players = game:GetService("Players")
@@ -15,7 +15,9 @@ local Toggles = {}
 local Config = {
     FlySpeed = 50,
     WalkSpeed = 32,
-    FOV = 70
+    JumpPower = 50,
+    FOV = 90,
+    AimbotFOV = 120
 }
 local Connections = {}
 
@@ -24,7 +26,7 @@ local Connections = {}
 --====================================================================--
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "WSD_Script_MM2_Final"
+ScreenGui.Name = "WSD_Script_Rivals"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
@@ -35,7 +37,7 @@ if not success then
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
--- Fixed Dragging System (Only registers on the specified frame)
+-- Fixed Dragging System (Only registers on TopBar)
 local function MakeDraggable(dragFrame, targetFrame)
     local dragging, dragInput, dragStart, startPos
     dragFrame.InputBegan:Connect(function(input)
@@ -64,7 +66,7 @@ local function MakeDraggable(dragFrame, targetFrame)
 end
 
 --====================================================================--
---[ MAIN PANEL & LOGO ]
+--[ MAIN PANEL ]
 --====================================================================--
 
 local MinimizedBtn = Instance.new("TextButton")
@@ -74,9 +76,9 @@ MinimizedBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
 MinimizedBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
 MinimizedBtn.Size = UDim2.new(0, 100, 0, 40)
 MinimizedBtn.Font = Enum.Font.GothamBold
-MinimizedBtn.Text = "WSD SCRIPT"
+MinimizedBtn.Text = "WSD RIVALS"
 MinimizedBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
-MinimizedBtn.TextSize = 14
+MinimizedBtn.TextSize = 13
 MinimizedBtn.Visible = false
 MinimizedBtn.ZIndex = 10
 
@@ -109,10 +111,7 @@ MainStroke.Color = Color3.fromRGB(255, 50, 50)
 MainStroke.Thickness = 2
 MainStroke.Parent = MainHolder
 
---====================================================================--
---[ TOP BAR (Drag Zone Only) ]
---====================================================================--
-
+-- TOP BAR
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainHolder
@@ -129,9 +128,9 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "WSD SCRIPT - MM2"
+Title.Text = "WSD SCRIPT - RIVALS v3.0"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 15
+Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local CloseBtn = Instance.new("TextButton")
@@ -157,7 +156,7 @@ end)
 MakeDraggable(TopBar, MainHolder)
 
 --====================================================================--
---[ SCROLLING CONTENT FRAME ]
+--[ CONTENT SCROLLING FRAME ]
 --====================================================================--
 
 local ContentFrame = Instance.new("ScrollingFrame")
@@ -166,7 +165,7 @@ ContentFrame.Parent = MainHolder
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Position = UDim2.new(0, 10, 0, 45)
 ContentFrame.Size = UDim2.new(1, -20, 1, -55)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 1450)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 1200)
 ContentFrame.ScrollBarThickness = 4
 ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
 
@@ -177,7 +176,7 @@ UIGrid.CellSize = UDim2.new(0, 215, 0, 40)
 UIGrid.SortOrder = Enum.SortOrder.LayoutOrder
 
 --====================================================================--
---[ COMPONENT CREATORS ]
+--[ CREATOR FUNCTIONS ]
 --====================================================================--
 
 local function CreateToggle(name, callback)
@@ -198,7 +197,7 @@ local function CreateToggle(name, callback)
     Label.Font = Enum.Font.GothamSemibold
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(180, 180, 180)
-    Label.TextSize = 13
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
 
     local Switch = Instance.new("TextButton")
@@ -247,7 +246,7 @@ local function CreateButton(name, callback)
     Button.Font = Enum.Font.GothamBold
     Button.Text = name
     Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Button.TextSize = 12
+    Button.TextSize = 11
 
     local BCorner = Instance.new("UICorner")
     BCorner.CornerRadius = UDim.new(0, 6)
@@ -278,7 +277,7 @@ local function CreateSlider(name, min, max, default, configKey, callback)
     Label.Font = Enum.Font.GothamSemibold
     Label.Text = name
     Label.TextColor3 = Color3.fromRGB(180, 180, 180)
-    Label.TextSize = 13
+    Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
 
     local ValueBox = Instance.new("TextBox")
@@ -290,14 +289,14 @@ local function CreateSlider(name, min, max, default, configKey, callback)
     ValueBox.Font = Enum.Font.GothamSemibold
     ValueBox.Text = tostring(default)
     ValueBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ValueBox.TextSize = 12
+    ValueBox.TextSize = 11
     ValueBox.ClearTextOnFocus = false
 
     local VBCorner = Instance.new("UICorner")
     VBCorner.CornerRadius = UDim.new(0, 4)
     VBCorner.Parent = ValueBox
 
-    ValueBox.FocusLost:Connect(function(enterPressed)
+    ValueBox.FocusLost:Connect(function()
         local val = tonumber(ValueBox.Text)
         if val then
             val = math.clamp(val, min, max)
@@ -312,54 +311,88 @@ local function CreateSlider(name, min, max, default, configKey, callback)
 end
 
 local function CreateHeader(text)
-    local HeaderFrame = Instance.new("Frame")
-    HeaderFrame.Parent = ContentFrame
-    HeaderFrame.BackgroundTransparency = 1
-    
     local Header = Instance.new("TextLabel")
-    Header.Parent = HeaderFrame
+    Header.Parent = ContentFrame
     Header.BackgroundTransparency = 1
-    Header.Size = UDim2.new(1, 0, 1, 0)
     Header.Font = Enum.Font.GothamBold
     Header.Text = "--- " .. text .. " ---"
     Header.TextColor3 = Color3.fromRGB(255, 50, 50)
-    Header.TextSize = 13
+    Header.TextSize = 12
     Header.TextXAlignment = Enum.TextXAlignment.Center
 end
 
 --====================================================================--
---[ CORE IMPLEMENTATIONS & SCANNERS ]
+--[ RIVALS UTILITIES & TARGETING ]
 --====================================================================--
 
-local function GetRole(player)
-    if not player then return "Innocent" end
-    local backpack = player:FindFirstChild("Backpack")
-    local char = player.Character
-    if (backpack and backpack:FindFirstChild("Knife")) or (char and char:FindFirstChild("Knife")) then
-        return "Murderer"
-    elseif (backpack and backpack:FindFirstChild("Gun")) or (char and char:FindFirstChild("Gun")) then
-        return "Sheriff"
-    end
-    return "Innocent"
-end
-
-local function GetPlayerByRole(roleName)
+local function GetClosestEnemy()
+    local closest, dist = nil, math.huge
     for _, p in pairs(Players:GetPlayers()) do
-        if GetRole(p) == roleName then return p end
+        if p ~= LocalPlayer and p.Team ~= LocalPlayer.Team and p.Character and p.Character:FindFirstChild("Head") then
+            local pos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+            if onScreen then
+                local mouseDist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if mouseDist < dist and mouseDist <= Config.AimbotFOV then
+                    dist = mouseDist
+                    closest = p
+                end
+            end
+        end
     end
-    return nil
-end
-
-local function TeleportTo(cframe)
-    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if root then root.CFrame = cframe + Vector3.new(0, 3, 0) end
+    return closest
 end
 
 --====================================================================--
---[ INJECTING ALL ELEMENTS TOGETHER ]
+--[ COMBAT & SILLET AIM ]
 --====================================================================--
+CreateHeader("COMBAT & SILLET TARGET")
 
-CreateHeader("MOVEMENT & PLAYER MODS")
+CreateToggle("SILLET AIMBOT", function(state)
+    if state then
+        Connections["SilletAim"] = RunService.RenderStepped:Connect(function()
+            local enemy = GetClosestEnemy()
+            if enemy and enemy.Character and enemy.Character:FindFirstChild("Head") then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, enemy.Character.Head.Position)
+            end
+        end)
+    elseif Connections["SilletAim"] then
+        Connections["SilletAim"]:Disconnect()
+    end
+end)
+
+CreateToggle("SILLET AIMKILL (AutoShoot)", function(state)
+    if state then
+        Connections["AimKill"] = RunService.RenderStepped:Connect(function()
+            local enemy = GetClosestEnemy()
+            if enemy and enemy.Character and enemy.Character:FindFirstChild("Head") then
+                -- Simulates trigger pull instantly when tracking a targeted object
+                local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                if tool then tool:Activate() end
+            end
+        end)
+    elseif Connections["AimKill"] then
+        Connections["AimKill"]:Disconnect()
+    end
+end)
+
+CreateToggle("NO RECOIL & SPREAD", function(state)
+    -- Modifies script weapon data locally inside Client environment
+    if state then
+        Connections["NoRecoil"] = RunService.RenderStepped:Connect(function()
+            local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool and tool:FindFirstChild("Configuration") then
+                for _, v in pairs(tool.Configuration:GetChildren()) do
+                    if v.Name:find("Recoil") or v.Name:find("Spread") then v.Value = 0 end
+                end
+            end
+        end)
+    elseif Connections["NoRecoil"] then
+        Connections["NoRecoil"]:Disconnect()
+    end
+end)
+
+--====================================================================--
+CreateHeader("MOVEMENT & CORES")
 
 CreateToggle("FLY", function(state)
     local char = LocalPlayer.Character
@@ -393,9 +426,9 @@ CreateToggle("FLY", function(state)
         Connections["FlyLoop"]:Disconnect()
     end
 end)
-CreateSlider("Set Fly Speed", 10, 200, 50, "FlySpeed", function() end)
+CreateSlider("Set Fly Speed", 10, 150, 50, "FlySpeed", function() end)
 
-CreateToggle("SPEED", function(state)
+CreateToggle("SPEED HACK", function(state)
     if state then
         Connections["SpeedLoop"] = RunService.RenderStepped:Connect(function()
             local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -407,301 +440,85 @@ CreateToggle("SPEED", function(state)
         if hum then hum.WalkSpeed = 16 end
     end
 end)
-CreateSlider("Set Walk Speed", 16, 150, 32, "WalkSpeed", function(val) end)
+CreateSlider("Set Walk Speed", 16, 100, 32, "WalkSpeed", function() end)
 
-CreateToggle("NOCLIP", function(state)
+CreateToggle("SUPER JUMP", function(state)
     if state then
-        Connections["NoClipLoop"] = RunService.Stepped:Connect(function()
-            if Toggles["NOCLIP"] and LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
-                end
-            end
+        Connections["JumpLoop"] = RunService.RenderStepped:Connect(function()
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.JumpPower = Config.JumpPower end
         end)
-    elseif Connections["NoClipLoop"] then
-        Connections["NoClipLoop"]:Disconnect()
-    end
-end)
-
---====================================================================--
-CreateHeader("SILLET SCRIPT EXECUTIVE OPTIONS")
-
-CreateToggle("SILLET AIMBOT (Innocents)", function(state)
-    if state then
-        Connections["SilletAimbotInnocents"] = RunService.RenderStepped:Connect(function()
-            local target = GetPlayerByRole("Innocent")
-            if target and target.Character and target.Character:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-            end
-        end)
-    elseif Connections["SilletAimbotInnocents"] then
-        Connections["SilletAimbotInnocents"]:Disconnect()
-    end
-end)
-
-CreateToggle("SILLET AIMBOT (Sheriff)", function(state)
-    if state then
-        Connections["SilletAimbotSheriff"] = RunService.RenderStepped:Connect(function()
-            local target = GetPlayerByRole("Sheriff")
-            if target and target.Character and target.Character:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-            end
-        end)
-    elseif Connections["SilletAimbotSheriff"] then
-        Connections["SilletAimbotSheriff"]:Disconnect()
-    end
-end)
-
-CreateToggle("SILLET AIMBOT (Murderer)", function(state)
-    if state then
-        Connections["SilletAimbotMurderer"] = RunService.RenderStepped:Connect(function()
-            local target = GetPlayerByRole("Murderer")
-            if target and target.Character and target.Character:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-            end
-        end)
-    elseif Connections["SilletAimbotMurderer"] then
-        Connections["SilletAimbotMurderer"]:Disconnect()
-    end
-end)
-
-CreateToggle("SILLET KNIFE KILL AURA", function(state)
-    if state then
-        Connections["SilletKillAura"] = RunService.RenderStepped:Connect(function()
-            local k = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-            if k then
-                if k.Parent == LocalPlayer.Backpack then k.Parent = LocalPlayer.Character end
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                        if d < 18 then
-                            k:Activate()
-                            firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 0)
-                        end
-                    end
-                end
-            end
-        end)
-    elseif Connections["SilletKillAura"] then
-        Connections["SilletKillAura"]:Disconnect()
-    end
-end)
-
-CreateToggle("SILLET ANTI-MURDER", function(state)
-    if state then
-        Connections["SilletAntiMurder"] = RunService.RenderStepped:Connect(function()
-            local murder = GetPlayerByRole("Murderer")
-            if murder and murder.Character and murder.Character:FindFirstChild("Knife") then
-                LocalPlayer.Character.HumanoidRootPart.CFrame = murder.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, 4)
-                task.wait(0.1)
-            end
-        end)
-    elseif Connections["SilletAntiMurder"] then
-        Connections["SilletAntiMurder"]:Disconnect()
-    end
-end)
-
-CreateToggle("SILLET GHOST MODE", function(state)
-    if state then
-        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.Transparency = 1 end
-        end
     else
-        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.Transparency = 0 end
-        end
+        if Connections["JumpLoop"] then Connections["JumpLoop"]:Disconnect() end
+        local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum.JumpPower = 50 end
     end
 end)
+CreateSlider("Set Jump Power", 50, 150, 75, "JumpPower", function() end)
 
-CreateToggle("SILLET INF STAMINA", function(state)
+CreateToggle("INFINITE JUMP", function(state)
     if state then
-        Connections["SilletStamina"] = RunService.RenderStepped:Connect(function()
-            local stamina = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Stamina")
-            if stamina and stamina:IsA("NumberValue") then stamina.Value = 100 end
+        Connections["InfJump"] = UserInputService.JumpRequest:Connect(function()
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
         end)
-    elseif Connections["SilletStamina"] then
-        Connections["SilletStamina"]:Disconnect()
-    end
-end)
-
-CreateToggle("SILLET NO-CLIP V2", function(state)
-    if state then
-        Connections["SilletNoclipV2"] = RunService.Stepped:Connect(function()
-            if Toggles["SILLET NO-CLIP V2"] and LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
-                end
-            end
-        end)
-    elseif Connections["SilletNoclipV2"] then
-        Connections["SilletNoclipV2"]:Disconnect()
+    elseif Connections["InfJump"] then
+        Connections["InfJump"]:Disconnect()
     end
 end)
 
 --====================================================================--
-CreateHeader("TELEPORTS & SERVER COINS")
+CreateHeader("VISUALS & ENVIRONMENT")
 
-CreateButton("TELEPORT TO SHERIFF", function()
-    local p = GetPlayerByRole("Sheriff")
-    if p and p.Character then TeleportTo(p.Character.HumanoidRootPart.CFrame) end
-end)
+CreateSlider("Set FOV", 60, 120, 90, "FOV", function(val) Camera.FieldOfView = val end)
 
-CreateButton("TELEPORT TO MURDER", function()
-    local p = GetPlayerByRole("Murderer")
-    if p and p.Character then TeleportTo(p.Character.HumanoidRootPart.CFrame) end
-end)
-
-CreateButton("TELEPORT TO GUN", function()
-    local gunDrop = Workspace:FindFirstChild("GunDrop")
-    if gunDrop then TeleportTo(gunDrop.CFrame) end
-end)
-
-CreateButton("TELEPORT TO LOBBY", function()
-    -- Standard Safe Internal Lobby Core Vector Space
-    TeleportTo(CFrame.new(-109, 138, -11))
-end)
-
-CreateButton("FIXED LOBBY TELEPORT", function()
-    TeleportTo(CFrame.new(-109, 138, -11))
-end)
-
-CreateButton("AUTO-FARM COINS", function()
-    for _, coin in pairs(Workspace:GetDescendants()) do
-        if coin:IsA("Model") and coin.Name:lower():find("coin") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = coin:GetModelCFrame()
-            task.wait(0.2)
-        end
-    end
-end)
-
---====================================================================--
-CreateHeader("VISUAL ENVIRONMENT & CAMERA")
-
-CreateSlider("Set FOV", 30, 120, 70, "FOV", function(val) Camera.FieldOfView = val end)
-
-CreateButton("NIGHT MODE", function()
-    Lighting.Ambient = Color3.fromRGB(15, 15, 25)
-    Lighting.Brightness = 0.4
-end)
-
-CreateButton("DAY MODE", function()
-    Lighting.Ambient = Color3.fromRGB(130, 130, 130)
-    Lighting.Brightness = 1
-end)
-
-CreateToggle("ESP", function(state)
+CreateToggle("ESP CHAMPS", function(state)
     if state then
-        Connections["ESPLoop"] = RunService.RenderStepped:Connect(function()
+        Connections["ChampsLoop"] = RunService.RenderStepped:Connect(function()
             for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    local role = GetRole(p)
-                    local color = Color3.fromRGB(255, 255, 255)
-                    if role == "Murderer" then color = Color3.fromRGB(255, 0, 0)
-                    elseif role == "Sheriff" then color = Color3.fromRGB(0, 0, 255) end
-                    
-                    if not p.Character:FindFirstChild("WSDEsp") then
+                if p ~= LocalPlayer and p.Team ~= LocalPlayer.Team and p.Character then
+                    if not p.Character:FindFirstChild("WSDChamps") then
                         local h = Instance.new("Highlight", p.Character)
-                        h.Name = "WSDEsp"
-                        h.FillColor = color
-                        h.OutlineColor = color
-                        h.FillTransparency = 0.6
-                    else
-                        p.Character.WSDEsp.FillColor = color
+                        h.Name = "WSDChamps"
+                        h.FillColor = Color3.fromRGB(255, 0, 50)
+                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        h.FillTransparency = 0.4
+                        h.OutlineTransparency = 0
                     end
                 end
             end
         end)
     else
-        if Connections["ESPLoop"] then Connections["ESPLoop"]:Disconnect() end
+        if Connections["ChampsLoop"] then Connections["ChampsLoop"]:Disconnect() end
         for _, p in pairs(Players:GetPlayers()) do
-            if p.Character and p.Character:FindFirstChild("WSDEsp") then
-                p.Character.WSDEsp:Destroy()
+            if p.Character and p.Character:FindFirstChild("WSDChamps") then
+                p.Character.WSDChamps:Destroy()
             end
         end
     end
 end)
 
 --====================================================================--
-CreateHeader("COMBAT & AUTOMATION")
+CreateHeader("TELEPORTS & SKIN UTIL")
 
-CreateToggle("AIMBOT", function(state)
-    if state then
-        Connections["AimbotLoop"] = RunService.RenderStepped:Connect(function()
-            local m = GetPlayerByRole("Murderer")
-            if m and m.Character and m.Character:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, m.Character.Head.Position)
-            end
-        end)
-    elseif Connections["AimbotLoop"] then
-        Connections["AimbotLoop"]:Disconnect()
+CreateButton("TELEPORT BASE", function()
+    -- Safely returns player to map safe zone spawn sectors
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local spawnPart = Workspace:FindFirstChild("SpawnLocation", true) or Workspace:FindFirstChild("Spawn", true)
+    if root and spawnPart then
+        root.CFrame = spawnPart.CFrame + Vector3.new(0, 4, 0)
+    elseif root then
+        root.CFrame = CFrame.new(0, 100, 0) -- Sky platform fallback if no map assets are indexed
     end
 end)
 
-CreateToggle("KILL AURA", function(state)
-    if state then
-        Connections["KillAura"] = RunService.RenderStepped:Connect(function()
-            local k = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-            if k then
-                if k.Parent == LocalPlayer.Backpack then k.Parent = LocalPlayer.Character end
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                        if d < 18 then
-                            k:Activate()
-                            firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 0)
-                            firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 1)
-                        end
-                    end
-                end
-            end
-        end)
-    elseif Connections["KillAura"] then
-        Connections["KillAura"]:Disconnect()
-    end
-end)
-
-CreateButton("KILL ALL", function()
-    local k = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-    if k then
-        k.Parent = LocalPlayer.Character
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                p.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-                task.wait(0.05)
-                k:Activate()
-                firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 0)
-            end
+CreateButton("UNLOCK ALL ARMAS (Visual)", function()
+    -- Re-inventories local weapon visual assets inside current execution instance
+    local replicatedStorage = game:GetService("ReplicatedStorage")
+    if replicatedStorage:FindFirstChild("Weapons") then
+        for _, w in pairs(replicatedStorage.Weapons:GetChildren()) do
+            local owns = w:FindFirstChild("Owns") or w:FindFirstChild("Unlocked")
+            if owns and owns:IsA("BoolValue") then owns.Value = true end
         end
     end
 end)
-
-CreateButton("KILL MURDER", function()
-    local gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
-    local m = GetPlayerByRole("Murderer")
-    if gun and m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
-        gun.Parent = LocalPlayer.Character
-        LocalPlayer.Character.HumanoidRootPart.CFrame = m.Character.HumanoidRootPart.CFrame + Vector3.new(0, 0, -3)
-        task.wait(0.1)
-        gun:Activate()
-    end
-end)
-
-local function FlingPlayer(targetP)
-    if targetP and targetP.Character and targetP.Character:FindFirstChild("HumanoidRootPart") then
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if root then
-            local oldCF = root.CFrame
-            local bav = Instance.new("BodyAngularVelocity", root)
-            bav.P = 1e10
-            bav.maxTorque = Vector3.new(1e10, 1e10, 1e10)
-            bav.angularvelocity = Vector3.new(0, 45000, 0)
-            root.CFrame = targetP.Character.HumanoidRootPart.CFrame
-            task.wait(0.4)
-            bav:Destroy()
-            root.CFrame = oldCF
-        end
-    end
-end
-
-CreateButton("FLING MURDER", function() FlingPlayer(GetPlayerByRole("Murderer")) end)
-CreateButton("FLING SHERIFF", function() FlingPlayer(GetPlayerByRole("Sheriff")) end)
