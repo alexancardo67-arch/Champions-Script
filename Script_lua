@@ -1,108 +1,66 @@
 --====================================================================--
---            SILLET CLIENT - NBA CHAMPIONS BASKETBALL V1.6           --
+--                    WDSN PREMIUM HUB V4.0 - MM2                     --
 --====================================================================--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SilletBasketball_Hub"
-
+ScreenGui.Name = "WDSN_Hub"
 local ParentGui = (gethui and gethui()) or game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.Parent = ParentGui
 ScreenGui.ResetOnSpawn = false
 
--- Configuración y Clave
+-- Theme Colors
+local BgColor = Color3.fromRGB(22, 19, 32)        
+local TopBarColor = Color3.fromRGB(18, 15, 26)     
+local ElementColor = Color3.fromRGB(29, 25, 43)    
+local AccentColor = Color3.fromRGB(138, 79, 235)   
+local BorderColor = Color3.fromRGB(45, 39, 66)     
+local TextMain = Color3.fromRGB(235, 230, 255)     
+local TextDark = Color3.fromRGB(140, 130, 160)     
+
+-- Global Configuration Values
 local FlySpeedValue = 50
 local WalkSpeedValue = 35
-local BasketballOrange = Color3.fromRGB(240, 110, 30)
+local HitboxSizeValue = 15
 
 --====================================================================--
---                         SISTEMA DE KEYS (UI)                       --
---====================================================================--
-
-local KeyFrame = Instance.new("Frame")
-KeyFrame.Name = "KeyFrame"
-KeyFrame.Parent = ScreenGui
-KeyFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-KeyFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
-KeyFrame.Size = UDim2.new(0, 300, 0, 180)
-KeyFrame.Active = true
-KeyFrame.Draggable = true
-
-local KeyCorner = Instance.new("UICorner")
-KeyCorner.CornerRadius = UDim.new(0, 10)
-KeyCorner.Parent = KeyFrame
-
-local KeyTitle = Instance.new("TextLabel")
-KeyTitle.Parent = KeyFrame
-KeyTitle.BackgroundTransparency = 1
-KeyTitle.Size = UDim2.new(1, 0, 0, 40)
-KeyTitle.Font = Enum.Font.GothamBold
-KeyTitle.Text = "🔑 SILLET KEY SYSTEM"
-KeyTitle.TextColor3 = BasketballOrange
-KeyTitle.TextSize = 14
-
-local KeyBox = Instance.new("TextBox")
-KeyBox.Parent = KeyFrame
-KeyBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-KeyBox.Position = UDim2.new(0.1, 0, 0.3, 0)
-KeyBox.Size = UDim2.new(0.8, 0, 0, 35)
-KeyBox.Font = Enum.Font.GothamSemibold
-KeyBox.PlaceholderText = "Introduce la Key aquí..."
-KeyBox.Text = ""
-KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyBox.TextSize = 12
-
-local BoxCorner = Instance.new("UICorner")
-BoxCorner.CornerRadius = UDim.new(0, 6)
-BoxCorner.Parent = KeyBox
-
-local CheckBtn = Instance.new("TextButton")
-CheckBtn.Parent = KeyFrame
-CheckBtn.BackgroundColor3 = BasketballOrange
-CheckBtn.Position = UDim2.new(0.2, 0, 0.65, 0)
-CheckBtn.Size = UDim2.new(0.6, 0, 0, 35)
-CheckBtn.Font = Enum.Font.GothamBold
-CheckBtn.Text = "VERIFICAR KEY"
-CheckBtn.TextColor3 = Color3.fromRGB(25, 25, 30)
-CheckBtn.TextSize = 12
-
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 6)
-BtnCorner.Parent = CheckBtn
-
---====================================================================--
---                        PANEL PRINCIPAL (GUI)                       --
+--                             MAIN PANEL                             --
 --====================================================================--
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+MainFrame.BackgroundColor3 = BgColor
 MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
-MainFrame.Size = UDim2.new(0, 450, 0, 350)
+MainFrame.Size = UDim2.new(0, 520, 0, 340)
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Visible = false 
+MainFrame.Visible = true -- Opens instantly without keys
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 14)
 MainCorner.Parent = MainFrame
 
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = BorderColor
+MainStroke.Thickness = 1
+MainStroke.Parent = MainFrame
+
+-- MINIMIZE BUTTON / LOGO
 local MinimizedLogo = Instance.new("TextButton")
 MinimizedLogo.Name = "MinimizedLogo"
 MinimizedLogo.Parent = ScreenGui
-MinimizedLogo.BackgroundColor3 = Color3.fromRGB(25, 20, 20)
+MinimizedLogo.BackgroundColor3 = BgColor
 MinimizedLogo.Position = UDim2.new(0.05, 0, 0.1, 0)
-MinimizedLogo.Size = UDim2.new(0, 55, 0, 55)
+MinimizedLogo.Size = UDim2.new(0, 60, 0, 60)
 MinimizedLogo.Font = Enum.Font.GothamBold
-MinimizedLogo.Text = "🏀\nSILLET"
-MinimizedLogo.TextColor3 = BasketballOrange
-MinimizedLogo.TextSize = 11
+MinimizedLogo.Text = "🔮"
+MinimizedLogo.TextColor3 = AccentColor
+MinimizedLogo.TextSize = 22
 MinimizedLogo.Visible = false
 MinimizedLogo.Draggable = true
 
@@ -110,23 +68,31 @@ local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = MinimizedLogo
 
+-- TOP BAR
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(40, 35, 35)
-TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = TopBarColor
+TopBar.Size = UDim2.new(1, 0, 0, 40)
 local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.CornerRadius = UDim.new(0, 14)
 TopCorner.Parent = TopBar
+
+local TopBarFix = Instance.new("Frame")
+TopBarFix.Parent = TopBar
+TopBarFix.BackgroundColor3 = TopBarColor
+TopBarFix.BorderSizePixel = 0
+TopBarFix.Position = UDim2.new(0, 0, 0.5, 0)
+TopBarFix.Size = UDim2.new(1, 0, 0.5, 0)
 
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Size = UDim2.new(0, 250, 1, 0)
+Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "SILLET BASKETBALL v1.6 - FIX"
-Title.TextColor3 = BasketballOrange
-Title.TextSize = 15
+Title.Text = "WDSN"
+Title.TextColor3 = TextMain
+Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinBtn = Instance.new("TextButton")
@@ -135,9 +101,9 @@ MinBtn.BackgroundTransparency = 1
 MinBtn.Position = UDim2.new(1, -70, 0, 0)
 MinBtn.Size = UDim2.new(0, 35, 1, 0)
 MinBtn.Font = Enum.Font.GothamBold
-MinBtn.Text = "-"
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.TextSize = 20
+MinBtn.Text = "—"
+MinBtn.TextColor3 = TextDark
+MinBtn.TextSize = 12
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = TopBar
@@ -145,9 +111,9 @@ CloseBtn.BackgroundTransparency = 1
 CloseBtn.Position = UDim2.new(1, -35, 0, 0)
 CloseBtn.Size = UDim2.new(0, 35, 1, 0)
 CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 75, 75)
-CloseBtn.TextSize = 16
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(240, 80, 80)
+CloseBtn.TextSize = 14
 
 MinBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
@@ -163,210 +129,342 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Parent = MainFrame
-ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
-ContentFrame.Position = UDim2.new(0, 15, 0, 50)
-ContentFrame.Size = UDim2.new(1, -30, 1, -65)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 700)
-ContentFrame.ScrollBarThickness = 4
+--====================================================================--
+--                          TAB CONTAINER                             --
+--====================================================================--
 
-local Grid = Instance.new("UIGridLayout")
-Grid.Parent = ContentFrame
-Grid.CellPadding = UDim2.new(0, 10, 0, 10)
-Grid.CellSize = UDim2.new(0, 195, 0, 35)
+local TabContainer = Instance.new("Frame")
+TabContainer.Parent = MainFrame
+TabContainer.BackgroundTransparency = 1
+TabContainer.Position = UDim2.new(0, 15, 0, 50)
+TabContainer.Size = UDim2.new(1, -30, 0, 35)
 
--- FUNCIONES CREADORAS
+local TabListLayout = Instance.new("UIListLayout")
+TabListLayout.Parent = TabContainer
+TabListLayout.FillDirection = Enum.FillDirection.Horizontal
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabListLayout.Padding = UDim.new(0, 10)
+
+local Pages = {}
+local Tabs = {}
+
+local function CreateTab(name, icon, order)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Name = name .. "Tab"
+    TabBtn.Parent = TabContainer
+    TabBtn.BackgroundColor3 = Color3.fromRGB(35, 30, 50)
+    TabBtn.BackgroundTransparency = 1
+    TabBtn.Size = UDim2.new(0, 110, 1, 0)
+    TabBtn.Font = Enum.Font.GothamSemibold
+    TabBtn.Text = icon .. "  " .. name
+    TabBtn.TextColor3 = TextDark
+    TabBtn.TextSize = 11
+    TabBtn.LayoutOrder = order
+    
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = UDim.new(0, 20)
+    TabCorner.Parent = TabBtn
+    
+    local TabStroke = Instance.new("UIStroke")
+    TabStroke.Color = BorderColor
+    TabStroke.Thickness = 1
+    TabStroke.Parent = TabBtn
+
+    local PageFrame = Instance.new("ScrollingFrame")
+    PageFrame.Name = name .. "Page"
+    PageFrame.Parent = MainFrame
+    PageFrame.BackgroundTransparency = 1
+    PageFrame.Position = UDim2.new(0, 15, 0, 95)
+    PageFrame.Size = UDim2.new(1, -30, 1, -110)
+    PageFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
+    PageFrame.ScrollBarThickness = 2
+    PageFrame.ScrollBarImageColor3 = AccentColor
+    PageFrame.Visible = false
+    
+    local PageLayout = Instance.new("UIListLayout")
+    PageLayout.Parent = PageFrame
+    PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PageLayout.Padding = UDim.new(0, 8)
+    
+    Pages[name] = PageFrame
+    Tabs[name] = TabBtn
+    
+    TabBtn.MouseButton1Click:Connect(function()
+        for tName, tBtn in pairs(Tabs) do
+            tBtn.BackgroundTransparency = 1
+            tBtn.TextColor3 = TextDark
+            tBtn.BackgroundColor3 = Color3.fromRGB(0,0,0)
+            Pages[tName].Visible = false
+        end
+        TabBtn.BackgroundTransparency = 0
+        TabBtn.BackgroundColor3 = ElementColor
+        TabBtn.TextColor3 = AccentColor
+        PageFrame.Visible = true
+    end)
+end
+
+CreateTab("Combat & ESP", "⚔️", 1)
+CreateTab("Auto Items", "⚡", 2)
+CreateTab("Movement", "⚙️", 3)
+
+--====================================================================--
+--                         INTERFACE ELEMENTS                         --
+--====================================================================--
+
 local Toggles = {}
-local function CreateToggle(text, callback)
+
+local function CreatePremiumToggle(parentPage, text, callback)
     local state = false
-    local Btn = Instance.new("TextButton")
-    local BtnCorner = Instance.new("UICorner")
     
-    Btn.Parent = ContentFrame
-    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    Btn.Font = Enum.Font.GothamSemibold
-    Btn.Text = text .. " [OFF]"
-    Btn.TextColor3 = Color3.fromRGB(255, 75, 75)
-    Btn.TextSize = 12
+    local RowFrame = Instance.new("Frame")
+    RowFrame.Parent = parentPage
+    RowFrame.BackgroundColor3 = ElementColor
+    RowFrame.Size = UDim2.new(1, -5, 0, 42)
     
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Btn
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 8)
+    RowCorner.Parent = RowFrame
     
-    Btn.MouseButton1Click:Connect(function()
+    local RowStroke = Instance.new("UIStroke")
+    RowStroke.Color = BorderColor
+    RowStroke.Parent = RowFrame
+    
+    local Label = Instance.new("TextLabel")
+    Label.Parent = RowFrame
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 15, 0, 0)
+    Label.Size = UDim2.new(0.7, 0, 1, 0)
+    Label.Font = Enum.Font.GothamSemibold
+    Label.Text = text
+    Label.TextColor3 = TextMain
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local Switch = Instance.new("TextButton")
+    Switch.Parent = RowFrame
+    Switch.BackgroundColor3 = BorderColor
+    Switch.Position = UDim2.new(1, -55, 0.25, 0)
+    Switch.Size = UDim2.new(0, 40, 0, 20)
+    Switch.Text = ""
+    
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(0, 10)
+    SwitchCorner.Parent = Switch
+    
+    local Circle = Instance.new("Frame")
+    Circle.Parent = Switch
+    Circle.BackgroundColor3 = TextDark
+    Circle.Position = UDim2.new(0.08, 0, 0.1, 0)
+    Circle.Size = UDim2.new(0, 16, 0, 16)
+    
+    local CircleCorner = Instance.new("UICorner")
+    CircleCorner.CornerRadius = UDim.new(1, 0)
+    CircleCorner.Parent = Circle
+    
+    Switch.MouseButton1Click:Connect(function()
         state = not state
         Toggles[text] = state
         if state then
-            Btn.Text = text .. " [ON]"
-            Btn.TextColor3 = BasketballOrange
+            Switch.BackgroundColor3 = AccentColor
+            Circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Circle.Position = UDim2.new(0.52, 0, 0.1, 0)
         else
-            Btn.Text = text .. " [OFF]"
-            Btn.TextColor3 = Color3.fromRGB(255, 75, 75)
+            Switch.BackgroundColor3 = BorderColor
+            Circle.BackgroundColor3 = TextDark
+            Circle.Position = UDim2.new(0.08, 0, 0.1, 0)
         end
         callback(state)
     end)
 end
 
-local function CreateButton(text, callback)
-    local Btn = Instance.new("TextButton")
-    local BtnCorner = Instance.new("UICorner")
+local function CreatePremiumTextBox(parentPage, text, default, callback)
+    local RowFrame = Instance.new("Frame")
+    RowFrame.Parent = parentPage
+    RowFrame.BackgroundColor3 = ElementColor
+    RowFrame.Size = UDim2.new(1, -5, 0, 42)
     
-    Btn.Parent = ContentFrame
-    Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
-    Btn.Font = Enum.Font.GothamSemibold
-    Btn.Text = text
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.TextSize = 12
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 8)
+    RowCorner.Parent = RowFrame
     
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Btn
-    
-    Btn.MouseButton1Click:Connect(callback)
-end
-
-local function CreateTextBox(text, default, callback)
-    local Holder = Instance.new("Frame")
-    Holder.Parent = ContentFrame
-    Holder.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
-    local HolderCorner = Instance.new("UICorner")
-    HolderCorner.CornerRadius = UDim.new(0, 6)
-    HolderCorner.Parent = Holder
+    local RowStroke = Instance.new("UIStroke")
+    RowStroke.Color = BorderColor
+    RowStroke.Parent = RowFrame
     
     local Label = Instance.new("TextLabel")
-    Label.Parent = Holder
+    Label.Parent = RowFrame
     Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 15, 0, 0)
     Label.Size = UDim2.new(0.6, 0, 1, 0)
     Label.Font = Enum.Font.GothamSemibold
     Label.Text = text
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.TextSize = 11
+    Label.TextColor3 = TextMain
+    Label.TextSize = 12
+    Label.TextXAlignment = Enum.TextXAlignment.Left
     
-    local Box = Instance.new("TextBox")
-    Box.Parent = Holder
-    Box.BackgroundColor3 = Color3.fromRGB(25, 25, 28)
-    Box.Position = UDim2.new(0.6, 0, 0.15, 0)
-    Box.Size = UDim2.new(0.35, 0, 0.7, 0)
-    Box.Font = Enum.Font.GothamBold
-    Box.Text = default
-    Box.TextColor3 = BasketballOrange
-    Box.TextSize = 12
-    local BoxCorner = Instance.new("UICorner")
-    BoxCorner.CornerRadius = UDim.new(0, 4)
-    BoxCorner.Parent = Box
+    local InputBox = Instance.new("TextBox")
+    InputBox.Parent = RowFrame
+    InputBox.BackgroundColor3 = BgColor
+    InputBox.Position = UDim2.new(1, -75, 0.2, 0)
+    InputBox.Size = UDim2.new(0, 60, 0, 25)
+    InputBox.Font = Enum.Font.GothamBold
+    InputBox.Text = default
+    InputBox.TextColor3 = AccentColor
+    InputBox.TextSize = 12
     
-    Box.FocusLost:Connect(function()
-        callback(Box.Text)
+    local InputCorner = Instance.new("UICorner")
+    InputCorner.CornerRadius = UDim.new(0, 6)
+    InputCorner.Parent = InputBox
+    
+    local InputStroke = Instance.new("UIStroke")
+    InputStroke.Color = BorderColor
+    InputStroke.Parent = InputBox
+    
+    InputBox.FocusLost:Connect(function()
+        callback(InputBox.Text)
     end)
 end
 
 --====================================================================--
---                         LÓGICA DEL JUEGO                           --
+--                         HIGHLIGHTS ENGINE                          --
 --====================================================================--
 
-local function GetClosestHoop()
-    local closestHoop = nil
-    local shortestDistance = math.huge
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and (obj.Name:lower():find("hoop") or obj.Name:lower():find("rim") or obj.Name:lower():find("net") or obj.Name:lower():find("goal")) then
-                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - obj.Position).Magnitude
-                if distance < shortestDistance then
-                    shortestDistance = distance
-                    closestHoop = obj
-                end
-            end
+local function ApplyHighlight(player, color)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if not player.Character:FindFirstChild("WDSN_Wallhack") then
+            local hl = Instance.new("Highlight")
+            hl.Name = "WDSN_Wallhack"
+            hl.FillColor = color
+            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+            hl.FillTransparency = 0.4
+            hl.OutlineTransparency = 0
+            hl.Adornee = player.Character
+            hl.Parent = player.Character
+        else
+            player.Character.WDSN_Wallhack.FillColor = color
         end
     end
-    return closestHoop
+end
+
+local function RemoveHighlight(player)
+    if player.Character and player.Character:FindFirstChild("WDSN_Wallhack") then
+        player.Character.WDSN_Wallhack:Destroy()
+    end
 end
 
 --====================================================================--
---                            OP TOGGLES                              --
+--                        FEATURES & MODULES                          --
 --====================================================================--
 
-CreateToggle("OP Auto Score Farm", function(state)
+-- --- PAGE 1: COMBAT & ESP ---
+
+CreatePremiumToggle(Pages["Combat & ESP"], "Chameleon Roles ESP", function(state)
     if state then
         task.spawn(function()
-            while Toggles["OP Auto Score Farm"] do
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local hasBall = LocalPlayer.Character:FindFirstChildOfClass("Tool") and (LocalPlayer.Character:FindFirstChildOfClass("Tool").Name:lower():find("ball") or LocalPlayer.Character:FindFirstChildOfClass("Tool").Name:lower():find("balon"))
-                    if hasBall then
-                        local hoop = GetClosestHoop()
-                        if hoop then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = hoop.CFrame * CFrame.new(0, 4, 0)
-                            task.wait(0.2)
-                            if LocalPlayer.Character:FindFirstChildOfClass("Tool") then
-                                LocalPlayer.Character:FindFirstChildOfClass("Tool"):Activate()
-                            end
+            while Toggles["Chameleon Roles ESP"] do
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character then
+                        local isMurder = p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")
+                        local isSheriff = p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")
+                        
+                        if isMurder then
+                            ApplyHighlight(p, Color3.fromRGB(255, 30, 30)) -- Murderer Red
+                        elseif isSheriff then
+                            ApplyHighlight(p, Color3.fromRGB(30, 100, 255)) -- Sheriff Blue
+                        else
+                            ApplyHighlight(p, Color3.fromRGB(30, 255, 100)) -- Innocent Green
                         end
                     end
                 end
-                task.wait(0.3)
+                task.wait(0.5)
             end
         end)
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            RemoveHighlight(p)
+        end
     end
 end)
 
-CreateToggle("OP Super Steal Reach", function(state)
+CreatePremiumToggle(Pages["Combat & ESP"], "OP Hitbox Expander", function(state)
     if state then
         task.spawn(function()
-            while Toggles["OP Super Steal Reach"] do
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            while Toggles["OP Hitbox Expander"] do
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        pcall(function()
+                            local hrp = p.Character.HumanoidRootPart
+                            hrp.Size = Vector3.new(HitboxSizeValue, HitboxSizeValue, HitboxSizeValue)
+                            hrp.Transparency = 0.7
+                            hrp.BrickColor = BrickColor.new("Medium blue")
+                            hrp.CanCollide = false
+                        end)
+                    end
+                end
+                task.wait(0.5)
+            end
+        end)
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    p.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
+                    p.Character.HumanoidRootPart.Transparency = 1
+                end)
+            end
+        end
+    end
+end)
+
+CreatePremiumToggle(Pages["Combat & ESP"], "OP Kill Aura (Murderer)", function(state)
+    if state then
+        task.spawn(function()
+            while Toggles["OP Kill Aura (Murderer)"] do
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife") then
+                    local knife = LocalPlayer.Character:FindFirstChild("Knife")
                     for _, p in pairs(Players:GetPlayers()) do
                         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                             local dist = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                            if dist < 35 then 
-                                local stealTool = LocalPlayer.Backpack:FindFirstChild("Steal") or LocalPlayer.Character:FindFirstChild("Steal") or LocalPlayer.Backpack:FindFirstChild("Robar")
-                                if stealTool then
-                                    stealTool:Activate()
-                                end
+                            if dist < 18 then
+                                knife:Activate()
+                                firetouchinterest(p.Character.HumanoidRootPart, knife.Handle, 0)
+                                firetouchinterest(p.Character.HumanoidRootPart, knife.Handle, 1)
                             end
                         end
                     end
                 end
-                task.wait(0.05)
+                task.wait(0.03)
             end
         end)
     end
 end)
 
-CreateToggle("Auto Aim Hoop", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Auto Aim Hoop"] do
-                local hoop = GetClosestHoop()
-                if hoop and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, hoop.Position)
-                end
-                task.wait()
-            end
-        end)
-    end
-end)
+-- --- PAGE 2: AUTO ITEMS ---
 
-CreateToggle("Ball Magnet", function(state)
+CreatePremiumToggle(Pages["Auto Items"], "Instant Gun Auto-Fetch", function(state)
     if state then
         task.spawn(function()
-            while Toggles["Ball Magnet"] do
+            while Toggles["Instant Gun Auto-Fetch"] do
                 if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    for _, obj in pairs(Workspace:GetDescendants()) do
-                        if obj:IsA("BasePart") and (obj.Name:lower():find("basketball") or obj.Name:lower():find("ball")) and not obj:IsDescendantOf(LocalPlayer.Character) then
-                            if obj.Velocity.Magnitude > 0 or obj.Parent == Workspace then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame * CFrame.new(0, 2, 0)
-                            end
-                        end
+                    local gunDrop = Workspace:FindFirstChild("GunDrop")
+                    if gunDrop then
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, gunDrop, 0)
+                        task.wait(0.05)
+                        firetouchinterest(LocalPlayer.Character.HumanoidRootPart, gunDrop, 1)
                     end
                 end
-                task.wait(0.3)
+                task.wait(0.2)
             end
         end)
     end
 end)
 
-CreateToggle("Court Speed Hack", function(state)
+-- --- PAGE 3: MOVEMENT ---
+
+CreatePremiumToggle(Pages["Movement"], "Speed Hack", function(state)
     if state then
         task.spawn(function()
-            while Toggles["Court Speed Hack"] do
+            while Toggles["Speed Hack"] do
                 pcall(function()
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
                         LocalPlayer.Character.Humanoid.WalkSpeed = WalkSpeedValue
@@ -385,7 +483,7 @@ CreateToggle("Court Speed Hack", function(state)
 end)
 
 local bodyVelocity = nil
-CreateToggle("Air Fly", function(state)
+CreatePremiumToggle(Pages["Movement"], "Air Fly", function(state)
     local character = LocalPlayer.Character
     if state and character and character:FindFirstChild("HumanoidRootPart") then
         bodyVelocity = Instance.new("BodyVelocity")
@@ -408,62 +506,58 @@ CreateToggle("Air Fly", function(state)
     end
 end)
 
---====================================================================--
---                            TELEPORTS                               --
---====================================================================--
+CreatePremiumToggle(Pages["Movement"], "NoClip Walls", function(state)
+    if state then
+        task.spawn(function()
+            while Toggles["NoClip Walls"] do
+                if LocalPlayer.Character then
+                    for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+                RunService.Stepped:Wait()
+            end
+        end)
+    end
+end)
 
-CreateButton("TP Canasta Lado A", function()
-    local hoops = {}
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (obj.Name:lower():find("hoop") or obj.Name:lower():find("rim")) then
-            table.insert(hoops, obj)
+local UserInputService = game:GetService("UserInputService")
+local JumpConnection
+CreatePremiumToggle(Pages["Movement"], "Infinite Jump", function(state)
+    if state then
+        JumpConnection = UserInputService.JumpRequest:Connect(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            end
+        end)
+    else
+        if JumpConnection then
+            JumpConnection:Disconnect()
+            JumpConnection = nil
         end
     end
-    if hoops[1] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = hoops[1].CFrame * CFrame.new(0, -10, 5)
-    end
 end)
 
-CreateButton("TP Canasta Lado B", function()
-    local hoops = {}
-    for _, obj in pairs(Workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (obj.Name:lower():find("hoop") or obj.Name:lower():find("rim")) then
-            table.insert(hoops, obj)
-        end
-    end
-    if hoops[2] and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = hoops[2].CFrame * CFrame.new(0, -10, 5)
-    end
-end)
-
-CreateButton("TP Centro de Cancha", function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 5, 0)
-    end
-end)
-
-CreateTextBox("Velocidad de Vuelo", "50", function(val)
+-- CONFIGURATION INPUTS
+CreatePremiumTextBox(Pages["Movement"], "Hitbox Scale Size", "15", function(val)
     local num = tonumber(val)
-    if num then FlySpeedValue = num end
+    if num then HitboxSizeValue = num end
 end)
 
-CreateTextBox("Velocidad Caminar", "35", function(val)
+CreatePremiumTextBox(Pages["Movement"], "Speed Value", "35", function(val)
     local num = tonumber(val)
     if num then WalkSpeedValue = num end
 end)
 
---====================================================================--
---                  LÓGICA DE VERIFICACIÓN FLEXIBLE                   --
---====================================================================--
-
-CheckBtn.MouseButton1Click:Connect(function()
-    local input = string.upper(string.gsub(KeyBox.Text, "%s+", ""))
-    
-    if input == "TÍO" or input == "TIO" then
-        KeyFrame:Destroy() 
-        MainFrame.Visible = true 
-    else
-        KeyBox.Text = ""
-        KeyBox.PlaceholderText = "❌ KEY INCORRECTA!"
-    end
+CreatePremiumTextBox(Pages["Movement"], "Fly Speed Value", "50", function(val)
+    local num = tonumber(val)
+    if num then FlySpeedValue = num end
 end)
+
+-- Auto-load First Page
+Tabs["Combat & ESP"].BackgroundTransparency = 0
+Tabs["Combat & ESP"].BackgroundColor3 = ElementColor
+Tabs["Combat & ESP"].TextColor3 = AccentColor
+Pages["Combat & ESP"].Visible = true
