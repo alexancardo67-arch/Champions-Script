@@ -1,7 +1,5 @@
 --====================================================================--
---                                                                    --
---                   SILLET CLIENT - 99 NIGHTS V2.2                   --
---                                                                    --
+--[ WSD SCRIPT - MM2 ] - INDEPENDENTLY STYLED / KURD HUB INSPIRATION
 --====================================================================--
 
 local Players = game:GetService("Players")
@@ -12,15 +10,25 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+-- State and Configuration Variables
+local Toggles = {}
+local Config = {
+    FlySpeed = 50,
+    WalkSpeed = 32,
+    FOV = 70
+}
+local Connections = {}
+
 --====================================================================--
---                         INICIALIZACIÓN GUI                         --
+--[ GUI CREATION ]
 --====================================================================--
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SilletClient_99Nights_Extended"
+ScreenGui.Name = "WSD_Script_MM2_EN"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- Target CoreGui or fallback to PlayerGui
 local success, err = pcall(function()
     ScreenGui.Parent = game:GetService("CoreGui")
 end)
@@ -28,19 +36,14 @@ if not success then
     ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 end
 
---====================================================================--
---                         SISTEMA DE ARRASTRE                        --
---====================================================================--
-
+-- Native Mobile Dragging System
 local function MakeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
-    
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -48,13 +51,11 @@ local function MakeDraggable(frame)
             end)
         end
     end)
-    
     frame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-    
     RunService.RenderStepped:Connect(function()
         if dragging and dragInput then
             local delta = dragInput.Position - dragStart
@@ -64,31 +65,551 @@ local function MakeDraggable(frame)
 end
 
 --====================================================================--
---                            INTERFAZ (GUI)                          --
+--[ MAIN PANEL & LOGO ]
 --====================================================================--
 
-local MinimizedLogo = Instance.new("TextButton")
-MinimizedLogo.Name = "MinimizedLogo"
-MinimizedLogo.Parent = ScreenGui
-MinimizedLogo.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MinimizedLogo.Position = UDim2.new(0.1, 0, 0.1, 0)
-MinimizedLogo.Size = UDim2.new(0, 55, 0, 55)
-MinimizedLogo.Font = Enum.Font.GothamBold
-MinimizedLogo.Text = "🌲\nSILLET"
-MinimizedLogo.TextColor3 = Color3.fromRGB(0, 255, 150)
-MinimizedLogo.TextSize = 12
-MinimizedLogo.Visible = false
-MinimizedLogo.ZIndex = 10
+-- Minimized Floating Button
+local MinimizedBtn = Instance.new("TextButton")
+MinimizedBtn.Name = "MinimizedBtn"
+MinimizedBtn.Parent = ScreenGui
+MinimizedBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MinimizedBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
+MinimizedBtn.Size = UDim2.new(0, 100, 0, 40)
+MinimizedBtn.Font = Enum.Font.GothamBold
+MinimizedBtn.Text = "WSD SCRIPT"
+MinimizedBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+MinimizedBtn.TextSize = 14
+MinimizedBtn.Visible = false
+MinimizedBtn.ZIndex = 10
 
-local LogoCorner = Instance.new("UICorner")
-LogoCorner.CornerRadius = UDim.new(1, 0)
-LogoCorner.Parent = MinimizedLogo
-MakeDraggable(MinimizedLogo)
+local MinimizedCorner = Instance.new("UICorner")
+MinimizedCorner.CornerRadius = UDim.new(0, 8)
+MinimizedCorner.Parent = MinimizedBtn
+
+local MinimizedStroke = Instance.new("UIStroke")
+MinimizedStroke.Color = Color3.fromRGB(255, 50, 50)
+MinimizedStroke.Thickness = 1.5
+MinimizedStroke.Parent = MinimizedBtn
+MakeDraggable(MinimizedBtn)
 
 --====================================================================--
 
+-- Main Frame Glow Container
+local MainHolder = Instance.new("Frame")
+MainHolder.Name = "MainHolder"
+MainHolder.Parent = ScreenGui
+MainHolder.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+MainHolder.Position = UDim2.new(0.5, -275, 0.5, -200)
+MainHolder.Size = UDim2.new(0, 550, 0, 400)
+MainHolder.BackgroundTransparency = 0.9
+MainHolder.Visible = true
+
+local HolderCorner = Instance.new("UICorner")
+HolderCorner.CornerRadius = UDim.new(0, 12)
+HolderCorner.Parent = MainHolder
+MakeDraggable(MainHolder)
+
+-- Dark Theme Inner Background
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-Main
+MainFrame.Parent = MainHolder
+MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+MainFrame.Position = UDim2.new(0, 2, 0, 2)
+MainFrame.Size = UDim2.new(1, -4, 1, -4)
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 50, 50)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+--====================================================================--
+--[ TOP BAR ]
+--====================================================================--
+
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Parent = MainFrame
+TopBar.BackgroundTransparency = 1
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+
+local Title = Instance.new("TextLabel")
+Title.Parent = TopBar
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(0, 300, 1, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "WSD SCRIPT - MM2"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = TopBar
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Position = UDim2.new(1, -40, 0, 0)
+CloseBtn.Size = UDim2.new(0, 40, 1, 0)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 75, 75)
+CloseBtn.TextSize = 20
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainHolder.Visible = false
+    MinimizedBtn.Visible = true
+end)
+
+MinimizedBtn.MouseButton1Click:Connect(function()
+    MainHolder.Visible = true
+    MinimizedBtn.Visible = false
+end)
+
+local Separator = Instance.new("Frame")
+Separator.Parent = TopBar
+Separator.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+Separator.BorderSizePixel = 0
+Separator.Position = UDim2.new(0, 10, 1, 0)
+Separator.Size = UDim2.new(1, -20, 0, 1)
+
+--====================================================================--
+--[ SCROLLING CONTENT FRAME ]
+--====================================================================--
+
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Parent = MainFrame
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 10, 0, 50)
+ContentFrame.Size = UDim2.new(1, -20, 1, -60)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 1150)
+ContentFrame.ScrollBarThickness = 5
+ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 50, 50)
+
+local UIGrid = Instance.new("UIGridLayout")
+UIGrid.Parent = ContentFrame
+UIGrid.CellPadding = UDim2.new(0, 12, 0, 12)
+UIGrid.CellSize = UDim2.new(0, 258, 0, 45)
+UIGrid.SortOrder = Enum.SortOrder.LayoutOrder
+
+--====================================================================--
+--[ COMPONENT CREATORS ]
+--====================================================================--
+
+-- Create Toggle Switches (Kurd Hub Style)
+local function CreateToggle(name, callback)
+    local state = false
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Name = name .. "_Toggle"
+    ToggleFrame.Parent = ContentFrame
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    
+    local TFCorner = Instance.new("UICorner")
+    TFCorner.CornerRadius = UDim.new(0, 8)
+    TFCorner.Parent = ToggleFrame
+
+    local TFStroke = Instance.new("UIStroke")
+    TFStroke.Color = Color3.fromRGB(40, 40, 45)
+    TFStroke.Thickness = 1
+    TFStroke.Parent = ToggleFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Parent = ToggleFrame
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.Font = Enum.Font.GothamSemibold
+    Label.Text = name
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Switch = Instance.new("TextButton")
+    Switch.Parent = ToggleFrame
+    Switch.AnchorPoint = Vector2.new(1, 0.5)
+    Switch.BackgroundColor3 = Color3.fromRGB(30, 30, 35) -- OFF Color
+    Switch.Position = UDim2.new(1, -10, 0.5, 0)
+    Switch.Size = UDim2.new(0, 40, 0, 22)
+    Switch.Text = ""
+
+    local SCorner = Instance.new("UICorner")
+    SCorner.CornerRadius = UDim.new(1, 0)
+    SCorner.Parent = Switch
+
+    local Indicator = Instance.new("Frame")
+    Indicator.Parent = Switch
+    Indicator.AnchorPoint = Vector2.new(0, 0.5)
+    Indicator.BackgroundColor3 = Color3.fromRGB(100, 100, 105) -- OFF Indicator Color
+    Indicator.Position = UDim2.new(0, 3, 0.5, 0)
+    Indicator.Size = UDim2.new(0, 16, 0, 16)
+
+    local ICorner = Instance.new("UICorner")
+    ICorner.CornerRadius = UDim.new(1, 0)
+    ICorner.Parent = Indicator
+
+    Switch.MouseButton1Click:Connect(function()
+        state = not state
+        Toggles[name] = state
+        
+        if state then
+            Switch:TweenBackgroundColor3(Color3.fromRGB(100, 20, 20), 0.2) -- Dark Red Background
+            Indicator:TweenBackgroundColor3(Color3.fromRGB(255, 50, 50), 0.2) -- Bright Red Dot
+            Indicator:TweenPosition(UDim2.new(1, -19, 0.5, 0), "Out", "Quad", 0.2)
+        else
+            Switch:TweenBackgroundColor3(Color3.fromRGB(30, 30, 35), 0.2)
+            Indicator:TweenBackgroundColor3(Color3.fromRGB(100, 100, 105), 0.2)
+            Indicator:TweenPosition(UDim2.new(0, 3, 0.5, 0), "Out", "Quad", 0.2)
+        end
+        callback(state)
+    end)
+end
+
+-- Create Menu Buttons
+local function CreateButton(name, callback)
+    local Button = Instance.new("TextButton")
+    Button.Name = name .. "_Btn"
+    Button.Parent = ContentFrame
+    Button.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    Button.Font = Enum.Font.GothamBold
+    Button.Text = name
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 14
+
+    local BCorner = Instance.new("UICorner")
+    BCorner.CornerRadius = UDim.new(0, 8)
+    BCorner.Parent = Button
+
+    local BStroke = Instance.new("UIStroke")
+    BStroke.Color = Color3.fromRGB(255, 50, 50)
+    BStroke.Thickness = 1
+    BStroke.Parent = Button
+
+    Button.MouseButton1Click:Connect(callback)
+end
+
+-- Create Modification Adjustment Boxes (Sliders/TextBox)
+local function CreateSlider(name, min, max, default, configKey, callback)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Name = name .. "_SliderFrame"
+    SliderFrame.Parent = ContentFrame
+    SliderFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+    
+    local SFCorner = Instance.new("UICorner")
+    SFCorner.CornerRadius = UDim.new(0, 8)
+    SFCorner.Parent = SliderFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Parent = SliderFrame
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 12, 0, 5)
+    Label.Size = UDim2.new(0, 150, 0, 20)
+    Label.Font = Enum.Font.GothamSemibold
+    Label.Text = name
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local ValueBox = Instance.new("TextBox")
+    ValueBox.Parent = SliderFrame
+    ValueBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    ValueBox.Position = UDim2.new(1, -50, 0, 5)
+    ValueBox.Size = UDim2.new(0, 40, 0, 20)
+    ValueBox.Font = Enum.Font.GothamSemibold
+    ValueBox.Text = tostring(default)
+    ValueBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ValueBox.TextSize = 12
+    ValueBox.ClearTextOnFocus = false
+
+    local VBCorner = Instance.new("UICorner")
+    VBCorner.CornerRadius = UDim.new(0, 4)
+    VBCorner.Parent = ValueBox
+
+    ValueBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            local val = tonumber(ValueBox.Text)
+            if val then
+                val = math.clamp(val, min, max)
+                ValueBox.Text = tostring(val)
+                Config[configKey] = val
+                callback(val)
+            else
+                ValueBox.Text = tostring(Config[configKey])
+            end
+        end
+    end)
+    callback(default)
+end
+
+--====================================================================--
+--[ GAME ENGINE LOGIC UTILITIES ]
+--====================================================================--
+
+local function GetRole(player)
+    if player.Backpack:FindFirstChild("Knife") or (player.Character and player.Character:FindFirstChild("Knife")) then
+        return "Murderer"
+    elseif player.Backpack:FindFirstChild("Gun") or (player.Character and player.Character:FindFirstChild("Gun")) then
+        return "Sheriff"
+    end
+    return "Innocent"
+end
+
+local function GetPlayerByRole(roleName)
+    for _, p in pairs(Players:GetPlayers()) do
+        if GetRole(p) == roleName then
+            return p
+        end
+    end
+    return nil
+end
+
+local function TeleportTo(cframe)
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.CFrame = cframe + Vector3.new(0, 3, 0)
+    end
+end
+
+--====================================================================--
+--[ MENU INJECTIONS ]
+--====================================================================--
+
+-- MOTION FEATURES
+CreateToggle("FLY", function(state)
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if state and root then
+        if Connections["FlyLoop"] then Connections["FlyLoop"]:Disconnect() end
+        local bg = Instance.new("BodyGyro", root)
+        bg.P = 9e4
+        bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.cframe = root.CFrame
+        local bv = Instance.new("BodyVelocity", root)
+        bv.velocity = Vector3.new(0, 0, 0)
+        bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+        
+        Connections["FlyLoop"] = RunService.RenderStepped:Connect(function()
+            if Toggles["FLY"] and char and root then
+                local camCF = Camera.CFrame
+                local moveDir = char.Humanoid.MoveDirection
+                local vel = Vector3.new(0, 0, 0)
+                if moveDir.Magnitude > 0 then
+                    vel = camCF.LookVector * moveDir.Z + camCF.RightVector * moveDir.X
+                end
+                bv.velocity = vel * Config.FlySpeed
+                bg.cframe = camCF
+            else
+                bg:Destroy()
+                bv:Destroy()
+                Connections["FlyLoop"]:Disconnect()
+            end
+        end)
+    elseif not state then
+        if Connections["FlyLoop"] then Connections["FlyLoop"]:Disconnect() end
+        local bg = root and root:FindFirstChildOfClass("BodyGyro")
+        local bv = root and root:FindFirstChildOfClass("BodyVelocity")
+        if bg then bg:Destroy() end
+        if bv then bv:Destroy() end
+    end
+end)
+CreateSlider("Set Fly Speed", 10, 200, 50, "FlySpeed", function(val) end)
+
+CreateToggle("SPEED", function(state)
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = state and Config.WalkSpeed or 16 end
+end)
+CreateSlider("Set Walk Speed", 16, 150, 32, "WalkSpeed", function(val)
+    local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum and Toggles["SPEED"] then hum.WalkSpeed = val end
+end)
+
+CreateToggle("NOCLIP", function(state)
+    if state then
+        Connections["NoClipLoop"] = RunService.Stepped:Connect(function()
+            if Toggles["NOCLIP"] and LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+        end)
+    elseif Connections["NoClipLoop"] then
+        Connections["NoClipLoop"]:Disconnect()
+    end
+end)
+
+-- POSITION TELEPORTS
+CreateButton("TELEPORT TO SHERIFF", function()
+    local p = GetPlayerByRole("Sheriff")
+    if p and p.Character then TeleportTo(p.Character.HumanoidRootPart.CFrame) end
+end)
+
+CreateButton("TELEPORT TO MURDER", function()
+    local p = GetPlayerByRole("Murderer")
+    if p and p.Character then TeleportTo(p.Character.HumanoidRootPart.CFrame) end
+end)
+
+CreateButton("TELEPORT TO LOBBY", function()
+    local lobby = Workspace:FindFirstChild("Lobby")
+    if lobby then TeleportTo(lobby:GetModelCFrame()) end
+end)
+
+CreateButton("TELEPORT TO GUN", function()
+    local gunDrop = Workspace:FindFirstChild("GunDrop")
+    if gunDrop then TeleportTo(gunDrop.CFrame) end
+end)
+
+-- CAMERA AND RENDERING VISUALS
+CreateSlider("Set FOV", 30, 120, 70, "FOV", function(val) Camera.FieldOfView = val end)
+
+CreateButton("NIGHT MODE", function()
+    Lighting.Ambient = Color3.fromRGB(10, 10, 20)
+    Lighting.OutdoorAmbient = Color3.fromRGB(10, 10, 20)
+    Lighting.Brightness = 0.5
+    Lighting.FogEnd = 500
+end)
+
+CreateButton("DAY MODE", function()
+    Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+    Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+    Lighting.Brightness = 1
+    Lighting.FogEnd = 10000
+end)
+
+CreateToggle("ESP", function(state)
+    if state then
+        Connections["ESPLoop"] = RunService.RenderStepped:Connect(function()
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local role = GetRole(p)
+                    local color = Color3.fromRGB(255, 255, 255)
+                    if role == "Murderer" then color = Color3.fromRGB(255, 0, 0)
+                    elseif role == "Sheriff" then color = Color3.fromRGB(0, 0, 255) end
+                    
+                    if not p.Character:FindFirstChild("WSDEsp") then
+                        local h = Instance.new("Highlight", p.Character)
+                        h.Name = "WSDEsp"
+                        h.FillColor = color
+                        h.OutlineColor = color
+                        h.FillTransparency = 0.5
+                    else
+                        p.Character.WSDEsp.FillColor = color
+                    end
+                end
+            end
+        end)
+    else
+        if Connections["ESPLoop"] then Connections["ESPLoop"]:Disconnect() end
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("WSDEsp") then
+                p.Character.WSDEsp:Destroy()
+            end
+        end
+    end
+end)
+
+-- SERVER COMBAT SIMULATORS
+CreateToggle("AIMBOT", function(state)
+    if state then
+        Connections["AimbotLoop"] = RunService.RenderStepped:Connect(function()
+            local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
+            local m = GetPlayerByRole("Murderer")
+            if gun and m and m.Character and m.Character:FindFirstChild("Head") then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, m.Character.Head.Position)
+            end
+        end)
+    elseif Connections["AimbotLoop"] then
+        Connections["AimbotLoop"]:Disconnect()
+    end
+end)
+
+CreateToggle("SILENT AIM", function(state)
+    if state then
+        Connections["SilentAim"] = LocalPlayer.CharacterAdded:Connect(function(char)
+            local gun = char:WaitForChild("Gun", 10)
+            if gun then
+                gun:Activate()
+                local r = gun:FindFirstChildOfClass("RemoteEvent") or gun:FindFirstChild("Shoot")
+                local m = GetPlayerByRole("Murderer")
+                if r and m and m.Character then r:FireServer(m.Character.HumanoidRootPart.Position) end
+            end
+        end)
+    elseif Connections["SilentAim"] then
+        Connections["SilentAim"]:Disconnect()
+    end
+end)
+
+CreateToggle("KILL AURA", function(state)
+    if state then
+        Connections["KillAura"] = RunService.RenderStepped:Connect(function()
+            local k = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
+            if k then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and GetRole(p) ~= "Murderer" then
+                        local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                        if d < 15 then
+                            k:Activate()
+                            firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 0)
+                            firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 1)
+                        end
+                    end
+                end
+            end
+        end)
+    elseif Connections["KillAura"] then
+        Connections["KillAura"]:Disconnect()
+    end
+end)
+
+CreateButton("KILL ALL", function()
+    if GetRole(LocalPlayer) == "Murderer" then
+        local k = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
+        if k then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and GetRole(p) ~= "Murderer" then
+                    p.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+                    k:Activate()
+                    firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 0)
+                    firetouchinterest(p.Character.HumanoidRootPart, k.Handle, 1)
+                end
+            end
+        end
+    end
+end)
+
+CreateButton("KILL MURDER", function()
+    local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
+    local m = GetPlayerByRole("Murderer")
+    if gun and m and m.Character then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position, m.Character.HumanoidRootPart.Position)
+        gun:Activate()
+        local r = gun:FindFirstChildOfClass("RemoteEvent") or gun:FindFirstChild("Shoot")
+        if r then r:FireServer(m.Character.HumanoidRootPart.Position) end
+    end
+end)
+
+-- FLING MECHANISM
+local function FlingPlayer(targetP)
+    if targetP and targetP.Character and targetP.Character:FindFirstChild("HumanoidRootPart") then
+        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            local oldCF = root.CFrame
+            Toggles["NOCLIP"] = true
+            local bav = Instance.new("BodyAngularVelocity", root)
+            bav.P = 1e10
+            bav.maxTorque = Vector3.new(1e10, 1e10, 1e10)
+            bav.angularvelocity = Vector3.new(0, 50000, 0)
+            
+            root.CFrame = targetP.Character.HumanoidRootPart.CFrame
+            task.wait(0.5)
+            bav:Destroy()
+            root.CFrame = oldCF
+            task.wait(0.1)
+            Toggles["NOCLIP"] = false
+        end
+    end
+end
+
+CreateButton("FLING MURDER", function() FlingPlayer(GetPlayerByRole("Murderer")) end)
+CreateButton("FLING SHERIFF", function() FlingPlayer(GetPlayerByRole("Sheriff")) end)
