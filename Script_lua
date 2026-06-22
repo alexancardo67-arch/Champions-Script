@@ -1,5 +1,5 @@
 --====================================================================--
---            SILLET CLIENT - NBA CHAMPIONS BASKETBALL V1.5           --
+--            SILLET CLIENT - NBA CHAMPIONS BASKETBALL V1.6           --
 --====================================================================--
 
 local Players = game:GetService("Players")
@@ -16,7 +16,6 @@ ScreenGui.Parent = ParentGui
 ScreenGui.ResetOnSpawn = false
 
 -- Configuración y Clave
-local CorrectKey = "TÍO"
 local FlySpeedValue = 50
 local WalkSpeedValue = 35
 local BasketballOrange = Color3.fromRGB(240, 110, 30)
@@ -88,13 +87,12 @@ MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
 MainFrame.Size = UDim2.new(0, 450, 0, 350)
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Visible = false -- Oculto hasta poner la key
+MainFrame.Visible = false 
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- LOGO MINIMIZADO
 local MinimizedLogo = Instance.new("TextButton")
 MinimizedLogo.Name = "MinimizedLogo"
 MinimizedLogo.Parent = ScreenGui
@@ -126,7 +124,7 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "SILLET BASKETBALL v1.5 - OP"
+Title.Text = "SILLET BASKETBALL v1.6 - FIX"
 Title.TextColor3 = BasketballOrange
 Title.TextSize = 15
 Title.TextXAlignment = Enum.TextXAlignment.Left
@@ -286,7 +284,6 @@ end
 --                            OP TOGGLES                              --
 --====================================================================--
 
--- ¡NUEVO! OP Auto Score Farm: Te lleva al aro instantáneamente si tienes la bola para anotar
 CreateToggle("OP Auto Score Farm", function(state)
     if state then
         task.spawn(function()
@@ -296,7 +293,6 @@ CreateToggle("OP Auto Score Farm", function(state)
                     if hasBall then
                         local hoop = GetClosestHoop()
                         if hoop then
-                            -- Teletransporte estratégico justo encima del aro para clavar o encestar al 100%
                             LocalPlayer.Character.HumanoidRootPart.CFrame = hoop.CFrame * CFrame.new(0, 4, 0)
                             task.wait(0.2)
                             if LocalPlayer.Character:FindFirstChildOfClass("Tool") then
@@ -311,7 +307,6 @@ CreateToggle("OP Auto Score Farm", function(state)
     end
 end)
 
--- ¡NUEVO! OP Super Steal Reach: Amplía drásticamente el rango para quitar balones
 CreateToggle("OP Super Steal Reach", function(state)
     if state then
         task.spawn(function()
@@ -320,7 +315,7 @@ CreateToggle("OP Super Steal Reach", function(state)
                     for _, p in pairs(Players:GetPlayers()) do
                         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                             local dist = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                            if dist < 35 then -- Rango súper aumentado de robo
+                            if dist < 35 then 
                                 local stealTool = LocalPlayer.Backpack:FindFirstChild("Steal") or LocalPlayer.Character:FindFirstChild("Steal") or LocalPlayer.Backpack:FindFirstChild("Robar")
                                 if stealTool then
                                     stealTool:Activate()
@@ -458,13 +453,16 @@ CreateTextBox("Velocidad Caminar", "35", function(val)
 end)
 
 --====================================================================--
---                         LÓGICA DE VERIFICACIÓN                     --
+--                  LÓGICA DE VERIFICACIÓN FLEXIBLE                   --
 --====================================================================--
 
 CheckBtn.MouseButton1Click:Connect(function()
-    if KeyBox.Text == CorrectKey then
-        KeyFrame:Destroy() -- Destruye el panel de key de la memoria
-        MainFrame.Visible = true -- Libera el menú completo
+    -- Remueve espacios y convierte la entrada a mayúsculas para evitar errores de tipeo o codificación
+    local input = string.upper(string.gsub(KeyBox.Text, "%s+", ""))
+    
+    if input == "TÍO" or input == "TIO" then
+        KeyFrame:Destroy() 
+        MainFrame.Visible = true 
     else
         KeyBox.Text = ""
         KeyBox.PlaceholderText = "❌ KEY INCORRECTA!"
