@@ -1,5 +1,7 @@
 --====================================================================--
---                   SILLET CLIENT - 99 NIGHTS V2.0                   --
+--                                                                    --
+--                   SILLET CLIENT - 99 NIGHTS V2.2                   --
+--                                                                    --
 --====================================================================--
 
 local Players = game:GetService("Players")
@@ -10,290 +12,83 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
+--====================================================================--
+--                         INICIALIZACIÓN GUI                         --
+--====================================================================--
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SilletClient_99Nights"
-ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "SilletClient_99Nights_Extended"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local success, err = pcall(function()
+    ScreenGui.Parent = game:GetService("CoreGui")
+end)
+if not success then
+    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+--====================================================================--
+--                         SISTEMA DE ARRASTRE                        --
+--====================================================================--
+
+local function MakeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+    
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragInput then
+            local delta = dragInput.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
 
 --====================================================================--
 --                            INTERFAZ (GUI)                          --
 --====================================================================--
 
--- BOTÓN FLOTANTE MINIMIZADO (Círculo Perfecto)
 local MinimizedLogo = Instance.new("TextButton")
 MinimizedLogo.Name = "MinimizedLogo"
 MinimizedLogo.Parent = ScreenGui
 MinimizedLogo.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MinimizedLogo.Position = UDim2.new(0.05, 0, 0.1, 0)
-MinimizedLogo.Size = UDim2.new(0, 50, 0, 50)
+MinimizedLogo.Position = UDim2.new(0.1, 0, 0.1, 0)
+MinimizedLogo.Size = UDim2.new(0, 55, 0, 55)
 MinimizedLogo.Font = Enum.Font.GothamBold
 MinimizedLogo.Text = "🌲\nSILLET"
 MinimizedLogo.TextColor3 = Color3.fromRGB(0, 255, 150)
 MinimizedLogo.TextSize = 12
 MinimizedLogo.Visible = false
-MinimizedLogo.Draggable = true
+MinimizedLogo.ZIndex = 10
 
 local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = MinimizedLogo
+MakeDraggable(MinimizedLogo)
 
--- PANEL PRINCIPAL
+--====================================================================--
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-MainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
-MainFrame.Size = UDim2.new(0, 450, 0, 350)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 10)
-UICorner.Parent = MainFrame
-
--- BARRA SUPERIOR
-local TopBar = Instance.new("Frame")
-TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 10)
-TopCorner.Parent = TopBar
-
-local Title = Instance.new("TextLabel")
-Title.Parent = TopBar
-Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Size = UDim2.new(0, 250, 1, 0)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "SILLET CLIENT - 99 NIGHTS v2.0"
-Title.TextColor3 = Color3.fromRGB(0, 255, 150)
-Title.TextSize = 16
-Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- BOTONES MINIMIZAR Y CERRAR
-local MinBtn = Instance.new("TextButton")
-MinBtn.Parent = TopBar
-MinBtn.BackgroundTransparency = 1
-MinBtn.Position = UDim2.new(1, -70, 0, 0)
-MinBtn.Size = UDim2.new(0, 35, 1, 0)
-MinBtn.Font = Enum.Font.GothamBold
-MinBtn.Text = "-"
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinBtn.TextSize = 20
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Parent = TopBar
-CloseBtn.BackgroundTransparency = 1
-CloseBtn.Position = UDim2.new(1, -35, 0, 0)
-CloseBtn.Size = UDim2.new(0, 35, 1, 0)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 75, 75)
-CloseBtn.TextSize = 16
-
-MinBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-    MinimizedLogo.Visible = true
-end)
-
-MinimizedLogo.MouseButton1Click:Connect(function()
-    MainFrame.Visible = true
-    MinimizedLogo.Visible = false
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- CONTENEDOR DE OPCIONES (SCROLLABLE)
-local ContentFrame = Instance.new("ScrollingFrame")
-ContentFrame.Parent = MainFrame
-ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-ContentFrame.Position = UDim2.new(0, 15, 0, 50)
-ContentFrame.Size = UDim2.new(1, -30, 1, -65)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 600) -- Altura flexible para los botones
-ContentFrame.ScrollBarThickness = 4
-
-local Grid = Instance.new("UIGridLayout")
-Grid.Parent = ContentFrame
-Grid.CellPadding = UDim2.new(0, 10, 0, 10)
-Grid.CellSize = UDim2.new(0, 195, 0, 35)
-
-local Toggles = {}
-local function CreateToggle(text, callback)
-    local state = false
-    local Btn = Instance.new("TextButton")
-    local BtnCorner = Instance.new("UICorner")
-    
-    Btn.Parent = ContentFrame
-    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    Btn.Font = Enum.Font.GothamSemibold
-    Btn.Text = text .. " [OFF]"
-    Btn.TextColor3 = Color3.fromRGB(255, 75, 75)
-    Btn.TextSize = 12
-    
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    BtnCorner.Parent = Btn
-    
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        Toggles[text] = state
-        if state then
-            Btn.Text = text .. " [ON]"
-            Btn.TextColor3 = Color3.fromRGB(0, 255, 150)
-        else
-            Btn.Text = text .. " [OFF]"
-            Btn.TextColor3 = Color3.fromRGB(255, 75, 75)
-        end
-        callback(state)
-    end)
-end
-
---====================================================================--
---                              TOGGLES                               --
---====================================================================--
-
--- 1. KILL AURA (Rápido, 360 grados para monstruos)
-CreateToggle("Kill Aura", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Kill Aura"] do
-                local char = LocalPlayer.Character
-                local tool = char and char:FindFirstChildOfClass("Tool")
-                
-                for _, obj in pairs(Workspace:GetDescendants()) do
-                    if obj:IsA("Humanoid") and obj.Parent ~= char and obj.Parent:FindFirstChild("HumanoidRootPart") then
-                        local enemyRoot = obj.Parent.HumanoidRootPart
-                        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
-                        
-                        if myRoot then
-                            local distance = (myRoot.Position - enemyRoot.Position).Magnitude
-                            if distance < 20 then -- Rango aumentado para mayor seguridad
-                                if tool then tool:Activate() end
-                                firetouchinterest(enemyRoot, tool.Handle, 0)
-                                firetouchinterest(enemyRoot, tool.Handle, 1)
-                            end
-                        end
-                    end
-                end
-                task.wait(0.05) -- Velocidad destructiva de ataque
-            end
-        end)
-    end
-end)
-
--- 2. FOGATA INFINITA (Guardián del fuego nocturno)
-CreateToggle("Inf Campfire", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Inf Campfire"] do
-                -- Busca dinámicamente modelos llamados Campfire o Fogata
-                for _, obj in pairs(Workspace:GetDescendants()) do
-                    if obj.Name:lower():find("campfire") or obj.Name:lower():find("fogata") then
-                        -- Congela los valores típicos de combustible, vida o tiempo de la fogata
-                        for _, val in pairs(obj:GetDescendants()) do
-                            if val:IsA("NumberValue") or val:IsA("IntValue") then
-                                if val.Name:lower():find("fuel") or val.Name:lower():find("wood") or val.Name:lower():find("health") then
-                                    val.Value = 100
-                                end
-                            end
-                        end
-                    end
-                end
-                task.wait(1)
-            end
-        end)
-    end
-end)
-
--- 3. AUTO TRAER COMIDA Y LOOT (Teletransporta consumibles y carne hacia ti)
-CreateToggle("Auto Bring Food", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Auto Bring Food"] do
-                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if root then
-                    for _, item in pairs(Workspace:GetDescendants()) do
-                        -- Filtra nombres comunes de comida, animales cazados o consumibles
-                        if item:IsA("BasePart") and (item.Name:lower():find("food") or item.Name:lower():find("meat") or item.Name:lower():find("carne") or item.Name:lower():find("apple") or item.Name:lower():find("berry")) then
-                            item.CFrame = root.CFrame + Vector3.new(0, 2, 0) -- Te los tira encima de la cabeza
-                        end
-                    end
-                end
-                task.wait(1.5)
-            end
-        end)
-    end
-end)
-
--- 4. FULL BRIGHT (Visibilidad absoluta de noche)
-CreateToggle("Full Bright", function(state)
-    if state then
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        Lighting.Brightness = 2
-        Lighting.FogEnd = 9e9
-    else
-        Lighting.Ambient = Color3.fromRGB(128, 128, 128)
-        Lighting.Brightness = 1
-        Lighting.FogEnd = 1000
-    end
-end)
-
--- 5. ESTAMINA INFINITA
-CreateToggle("Infinite Energy", function(state)
-    task.spawn(function()
-        while Toggles["Infinite Energy"] do
-            local char = LocalPlayer.Character
-            if char then
-                local stamina = char:FindFirstChild("Stamina") or char:FindFirstChild("Energy") or LocalPlayer:FindFirstChild("Stamina")
-                if stamina and (stamina:IsA("NumberValue") or stamina:IsA("IntValue")) then
-                    stamina.Value = 100
-                end
-            end
-            task.wait(0.2)
-        end
-    end)
-end)
-
--- 6. SPEED HACK (Correr el doble)
-CreateToggle("Speed Hack", function(state)
-    task.spawn(function()
-        while task.wait(0.5) do
-            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.WalkSpeed = state and 35 or 16
-            end
-            if not Toggles["Speed Hack"] then break end
-        end
-    end)
-end)
-
--- 7. ESP MONSTRUOS (Rastreador de peligro)
-CreateToggle("ESP Monsters", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["ESP Monsters"] do
-                for _, v in pairs(Workspace:GetDescendants()) do
-                    if v:IsA("Humanoid") and v.Parent ~= LocalPlayer.Character and v.Parent:FindFirstChild("HumanoidRootPart") then
-                        if not v.Parent:FindFirstChild("ForestESP") then
-                            local highlight = Instance.new("Highlight")
-                            highlight.Name = "ForestESP"
-                            highlight.Parent = v.Parent
-                            highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                            highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-                            highlight.FillTransparency = 0.5
-                        end
-                    end
-                end
-                task.wait(2)
-            end
-        end)
-    else
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v.Parent and v.Parent:FindFirstChild("ForestESP") then
-                v.Parent.ForestESP:Destroy()
-            end
-        end
-    end
-end)
+Main
