@@ -457,7 +457,6 @@ end)
 --====================================================================--
 
 CheckBtn.MouseButton1Click:Connect(function()
-    -- Remueve espacios y convierte la entrada a mayúsculas para evitar errores de tipeo o codificación
     local input = string.upper(string.gsub(KeyBox.Text, "%s+", ""))
     
     if input == "TÍO" or input == "TIO" then
