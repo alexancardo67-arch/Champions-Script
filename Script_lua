@@ -1,16 +1,17 @@
 --====================================================================--
---                      SILLET CLIENT - MM2 V2.0                      --
+--                   SILLET CLIENT - 99 NIGHTS V2.0                   --
 --====================================================================--
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SilletClient_MM2"
+ScreenGui.Name = "SilletClient_99Nights"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -18,6 +19,7 @@ ScreenGui.ResetOnSpawn = false
 --                            INTERFAZ (GUI)                          --
 --====================================================================--
 
+-- BOTÓN FLOTANTE MINIMIZADO (Círculo Perfecto)
 local MinimizedLogo = Instance.new("TextButton")
 MinimizedLogo.Name = "MinimizedLogo"
 MinimizedLogo.Parent = ScreenGui
@@ -25,7 +27,7 @@ MinimizedLogo.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MinimizedLogo.Position = UDim2.new(0.05, 0, 0.1, 0)
 MinimizedLogo.Size = UDim2.new(0, 50, 0, 50)
 MinimizedLogo.Font = Enum.Font.GothamBold
-MinimizedLogo.Text = "🗡️\nSILLET"
+MinimizedLogo.Text = "🌲\nSILLET"
 MinimizedLogo.TextColor3 = Color3.fromRGB(0, 255, 150)
 MinimizedLogo.TextSize = 12
 MinimizedLogo.Visible = false
@@ -35,6 +37,7 @@ local LogoCorner = Instance.new("UICorner")
 LogoCorner.CornerRadius = UDim.new(1, 0)
 LogoCorner.Parent = MinimizedLogo
 
+-- PANEL PRINCIPAL
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
@@ -48,6 +51,7 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 10)
 UICorner.Parent = MainFrame
 
+-- BARRA SUPERIOR
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
@@ -60,13 +64,14 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 0)
-Title.Size = UDim2.new(0, 200, 1, 0)
+Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "SILLET CLIENT v2.0 - MM2"
+Title.Text = "SILLET CLIENT - 99 NIGHTS v2.0"
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
+-- BOTONES MINIMIZAR Y CERRAR
 local MinBtn = Instance.new("TextButton")
 MinBtn.Parent = TopBar
 MinBtn.BackgroundTransparency = 1
@@ -101,12 +106,13 @@ CloseBtn.MouseButton1Click:Connect(function()
     ScreenGui:Destroy()
 end)
 
+-- CONTENEDOR DE OPCIONES (SCROLLABLE)
 local ContentFrame = Instance.new("ScrollingFrame")
 ContentFrame.Parent = MainFrame
 ContentFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 ContentFrame.Position = UDim2.new(0, 15, 0, 50)
 ContentFrame.Size = UDim2.new(1, -30, 1, -65)
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 900) -- Expandido para las opciones masivas
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 600) -- Altura flexible para los botones
 ContentFrame.ScrollBarThickness = 4
 
 local Grid = Instance.new("UIGridLayout")
@@ -145,98 +151,138 @@ local function CreateToggle(text, callback)
 end
 
 --====================================================================--
---                            FUNCIONES LOGICAS                       --
---====================================================================--
-
-local function GetRole(player)
-    if player.Backpack:FindFirstChild("Knife") or (player.Character and player.Character:FindFirstChild("Knife")) then
-        return "Murderer"
-    elseif player.Backpack:FindFirstChild("Gun") or (player.Character and player.Character:FindFirstChild("Gun")) then
-        return "Sheriff"
-    end
-    return "Innocent"
-end
-
---====================================================================--
 --                              TOGGLES                               --
 --====================================================================--
 
--- ESP Players
-CreateToggle("ESP Players", function(state)
+-- 1. KILL AURA (Rápido, 360 grados para monstruos)
+CreateToggle("Kill Aura", function(state)
     if state then
         task.spawn(function()
-            while Toggles["ESP Players"] do
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                        local role = GetRole(v)
-                        local color = Color3.fromRGB(255, 255, 255)
-                        if role == "Murderer" then color = Color3.fromRGB(255, 0, 0) end
-                        if role == "Sheriff" then color = Color3.fromRGB(0, 0, 255) end
+            while Toggles["Kill Aura"] do
+                local char = LocalPlayer.Character
+                local tool = char and char:FindFirstChildOfClass("Tool")
+                
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if obj:IsA("Humanoid") and obj.Parent ~= char and obj.Parent:FindFirstChild("HumanoidRootPart") then
+                        local enemyRoot = obj.Parent.HumanoidRootPart
+                        local myRoot = char and char:FindFirstChild("HumanoidRootPart")
                         
-                        if not v.Character:FindFirstChild("SilletESP") then
-                            local highlight = Instance.new("Highlight")
-                            highlight.Name = "SilletESP"
-                            highlight.Parent = v.Character
-                            highlight.FillTransparency = 0.5
-                            highlight.OutlineTransparency = 0
-                            highlight.FillColor = color
-                            highlight.OutlineColor = color
-                        else
-                            v.Character.SilletESP.FillColor = color
-                            v.Character.SilletESP.OutlineColor = color
+                        if myRoot then
+                            local distance = (myRoot.Position - enemyRoot.Position).Magnitude
+                            if distance < 20 then -- Rango aumentado para mayor seguridad
+                                if tool then tool:Activate() end
+                                firetouchinterest(enemyRoot, tool.Handle, 0)
+                                firetouchinterest(enemyRoot, tool.Handle, 1)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.05) -- Velocidad destructiva de ataque
+            end
+        end)
+    end
+end)
+
+-- 2. FOGATA INFINITA (Guardián del fuego nocturno)
+CreateToggle("Inf Campfire", function(state)
+    if state then
+        task.spawn(function()
+            while Toggles["Inf Campfire"] do
+                -- Busca dinámicamente modelos llamados Campfire o Fogata
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if obj.Name:lower():find("campfire") or obj.Name:lower():find("fogata") then
+                        -- Congela los valores típicos de combustible, vida o tiempo de la fogata
+                        for _, val in pairs(obj:GetDescendants()) do
+                            if val:IsA("NumberValue") or val:IsA("IntValue") then
+                                if val.Name:lower():find("fuel") or val.Name:lower():find("wood") or val.Name:lower():find("health") then
+                                    val.Value = 100
+                                end
+                            end
                         end
                     end
                 end
                 task.wait(1)
             end
         end)
-    else
-        for _, v in pairs(Players:GetPlayers()) do
-            if v.Character and v.Character:FindFirstChild("SilletESP") then
-                v.Character.SilletESP:Destroy()
-            end
-        end
     end
 end)
 
--- ESP Dropped Gun
-CreateToggle("ESP Dropped Gun", function(state)
+-- 3. AUTO TRAER COMIDA Y LOOT (Teletransporta consumibles y carne hacia ti)
+CreateToggle("Auto Bring Food", function(state)
     if state then
         task.spawn(function()
-            while Toggles["ESP Dropped Gun"] do
-                local gunDrop = Workspace:FindFirstChild("GunDrop")
-                if gunDrop and not gunDrop:FindFirstChild("SilletGunESP") then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Name = "SilletGunESP"
-                    highlight.Parent = gunDrop
-                    highlight.FillColor = Color3.fromRGB(255, 255, 0)
-                    highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+            while Toggles["Auto Bring Food"] do
+                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    for _, item in pairs(Workspace:GetDescendants()) do
+                        -- Filtra nombres comunes de comida, animales cazados o consumibles
+                        if item:IsA("BasePart") and (item.Name:lower():find("food") or item.Name:lower():find("meat") or item.Name:lower():find("carne") or item.Name:lower():find("apple") or item.Name:lower():find("berry")) then
+                            item.CFrame = root.CFrame + Vector3.new(0, 2, 0) -- Te los tira encima de la cabeza
+                        end
+                    end
                 end
-                task.wait(1)
+                task.wait(1.5)
             end
         end)
-    else
-        local gunDrop = Workspace:FindFirstChild("GunDrop")
-        if gunDrop and gunDrop:FindFirstChild("SilletGunESP") then
-            gunDrop.SilletGunESP:Destroy()
-        end
     end
 end)
 
--- ESP Coins
-CreateToggle("ESP Coins", function(state)
+-- 4. FULL BRIGHT (Visibilidad absoluta de noche)
+CreateToggle("Full Bright", function(state)
+    if state then
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 2
+        Lighting.FogEnd = 9e9
+    else
+        Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+        Lighting.Brightness = 1
+        Lighting.FogEnd = 1000
+    end
+end)
+
+-- 5. ESTAMINA INFINITA
+CreateToggle("Infinite Energy", function(state)
+    task.spawn(function()
+        while Toggles["Infinite Energy"] do
+            local char = LocalPlayer.Character
+            if char then
+                local stamina = char:FindFirstChild("Stamina") or char:FindFirstChild("Energy") or LocalPlayer:FindFirstChild("Stamina")
+                if stamina and (stamina:IsA("NumberValue") or stamina:IsA("IntValue")) then
+                    stamina.Value = 100
+                end
+            end
+            task.wait(0.2)
+        end
+    end)
+end)
+
+-- 6. SPEED HACK (Correr el doble)
+CreateToggle("Speed Hack", function(state)
+    task.spawn(function()
+        while task.wait(0.5) do
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.WalkSpeed = state and 35 or 16
+            end
+            if not Toggles["Speed Hack"] then break end
+        end
+    end)
+end)
+
+-- 7. ESP MONSTRUOS (Rastreador de peligro)
+CreateToggle("ESP Monsters", function(state)
     if state then
         task.spawn(function()
-            while Toggles["ESP Coins"] do
-                local map = Workspace:FindFirstChild("Normal")
-                if map and map:FindFirstChild("CoinContainer") then
-                    for _, coin in pairs(map.CoinContainer:GetChildren()) do
-                        if not coin:FindFirstChild("SilletCoinESP") then
+            while Toggles["ESP Monsters"] do
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v:IsA("Humanoid") and v.Parent ~= LocalPlayer.Character and v.Parent:FindFirstChild("HumanoidRootPart") then
+                        if not v.Parent:FindFirstChild("ForestESP") then
                             local highlight = Instance.new("Highlight")
-                            highlight.Name = "SilletCoinESP"
-                            highlight.Parent = coin
-                            highlight.FillColor = Color3.fromRGB(0, 255, 0)
-                            highlight.FillTransparency = 0.6
+                            highlight.Name = "ForestESP"
+                            highlight.Parent = v.Parent
+                            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                            highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+                            highlight.FillTransparency = 0.5
                         end
                     end
                 end
@@ -244,282 +290,10 @@ CreateToggle("ESP Coins", function(state)
             end
         end)
     else
-        local map = Workspace:FindFirstChild("Normal")
-        if map and map:FindFirstChild("CoinContainer") then
-            for _, coin in pairs(map.CoinContainer:GetChildren()) do
-                if coin:FindFirstChild("SilletCoinESP") then
-                    coin.SilletCoinESP:Destroy()
-                end
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v.Parent and v.Parent:FindFirstChild("ForestESP") then
+                v.Parent.ForestESP:Destroy()
             end
         end
-    end
-end)
-
--- Aimbot (Murderer)
-CreateToggle("Aimbot (Follow Murderer)", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Aimbot (Follow Murderer)"] do
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= LocalPlayer and GetRole(v) == "Murderer" and v.Character and v.Character:FindFirstChild("Head") then
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, v.Character.Head.Position)
-                    end
-                end
-                task.wait()
-            end
-        end)
-    end
-end)
-
--- Kill Aura
-CreateToggle("Kill Aura", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Kill Aura"] do
-                local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
-                if knife then
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                            local dist = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
-                            if dist < 15 then
-                                knife:Activate()
-                                firetouchinterest(v.Character.HumanoidRootPart, knife.Handle, 0)
-                                firetouchinterest(v.Character.HumanoidRootPart, knife.Handle, 1)
-                            end
-                        end
-                    end
-                end
-                task.wait(0.1)
-            end
-        end)
-    end
-end)
-
--- Fly
-local bodyVelocity = nil
-CreateToggle("Fly", function(state)
-    local character = LocalPlayer.Character
-    if state and character and character:FindFirstChild("HumanoidRootPart") then
-        bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocity.Parent = character.HumanoidRootPart
-        
-        task.spawn(function()
-            while Toggles["Fly"] and character and character:FindFirstChild("Humanoid") do
-                local moveDir = character.Humanoid.MoveDirection
-                bodyVelocity.Velocity = moveDir * 50
-                task.wait()
-            end
-        end)
-    else
-        if bodyVelocity then
-            bodyVelocity:Destroy()
-            bodyVelocity = nil
-        end
-    end
-end)
-
--- Invisible
-CreateToggle("Invisible", function(state)
-    if LocalPlayer.Character then
-        local trans = state and 1 or 0
-        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
-            if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" or v:IsA("Decal") then
-                v.Transparency = trans
-            end
-        end
-    end
-end)
-
--- Auto Coins
-CreateToggle("Auto Coins", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Auto Coins"] do
-                local map = Workspace:FindFirstChild("Normal")
-                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if map and map:FindFirstChild("CoinContainer") and root then
-                    for _, coin in pairs(map.CoinContainer:GetChildren()) do
-                        if Toggles["Auto Coins"] and (coin:IsA("BasePart") or coin:FindFirstChild("TouchInterest")) then
-                            root.CFrame = coin.CFrame
-                            task.wait(0.1)
-                        end
-                    end
-                end
-                task.wait(1)
-            end
-        end)
-    end
-end)
-
--- Grab Gun
-CreateToggle("Grab Gun", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Grab Gun"] do
-                local gunDrop = Workspace:FindFirstChild("GunDrop")
-                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if gunDrop and root then
-                    root.CFrame = gunDrop.CFrame
-                    Toggles["Grab Gun"] = false 
-                end
-                task.wait(0.5)
-            end
-        end)
-    end
-end)
-
--- Speed Hack
-CreateToggle("Speed Hack", function(state)
-    task.spawn(function()
-        while task.wait(0.5) do
-            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.WalkSpeed = state and 32 or 16
-            end
-            if not Toggles["Speed Hack"] then break end
-        end
-    end)
-end)
-
--- Inf Jump
-local JumpConnection = nil
-CreateToggle("Inf Jump", function(state)
-    if state then
-        JumpConnection = UserInputService.JumpRequest:Connect(function()
-            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end)
-    else
-        if JumpConnection then
-            JumpConnection:Disconnect()
-            JumpConnection = nil
-        end
-    end
-end)
-
--- Tp Lobby
-CreateToggle("Tp Lobby", function(state)
-    if state then
-        local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        local lobby = Workspace:FindFirstChild("Lobby")
-        if root and lobby then
-            root.CFrame = lobby:GetModelCFrame() + Vector3.new(0, 5, 0)
-        end
-        Toggles["Tp Lobby"] = false
-    end
-end)
-
--- Sheriff SilentAim
-CreateToggle("Sheriff SilentAim", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Sheriff SilentAim"] do
-                local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
-                if gun and GetRole(LocalPlayer) == "Sheriff" then
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if v ~= LocalPlayer and GetRole(v) == "Murderer" and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                            gun:Activate()
-                            local remote = gun:FindFirstChildOfClass("RemoteEvent") or gun:FindFirstChild("Shoot")
-                            if remote then
-                                remote:FireServer(v.Character.HumanoidRootPart.Position)
-                            end
-                        end
-                    end
-                end
-                task.wait(0.2)
-            end
-        end)
-    end
-end)
-
--- No Clip
-local NoClipConnection = nil
-CreateToggle("No Clip", function(state)
-    if state then
-        NoClipConnection = RunService.Stepped:Connect(function()
-            if LocalPlayer.Character then
-                for _, part in pairs(LocalPlayer.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-        end)
-    else
-        if NoClipConnection then
-            NoClipConnection:Disconnect()
-            NoClipConnection = nil
-        end
-    end
-end)
-
--- X-Ray
-CreateToggle("X-Ray", function(state)
-    local map = Workspace:FindFirstChild("Normal")
-    if map then
-        for _, part in pairs(map:GetDescendants()) do
-            if part:IsA("BasePart") and not part.Parent:FindFirstChildOfClass("Humanoid") then
-                part.LocalTransparencyModifier = state and 0.6 or 0
-            end
-        end
-    end
-end)
-
---====================================================================--
---                         MÁXIMA DESTRUCCIÓN                         --
---====================================================================--
-
--- Kill All (Solo funciona si eres Murderer y tienes el cuchillo afuera)
-CreateToggle("Kill All", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Kill All"] do
-                local knife = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Knife")
-                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if knife and root then
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and GetRole(v) ~= "Murderer" then
-                            -- Trae al enemigo de golpe y activa el cuchillo
-                            v.Character.HumanoidRootPart.CFrame = root.CFrame + root.CFrame.LookVector * 2
-                            knife:Activate()
-                            firetouchinterest(v.Character.HumanoidRootPart, knife.Handle, 0)
-                            firetouchinterest(v.Character.HumanoidRootPart, knife.Handle, 1)
-                        end
-                    end
-                end
-                task.wait(0.3)
-            end
-        end)
-    end
-end)
-
--- Kill Murderer (Teletransporta y mata solo al asesino de la ronda)
-CreateToggle("Kill Murderer", function(state)
-    if state then
-        task.spawn(function()
-            while Toggles["Kill Murderer"] do
-                local gun = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Gun")
-                local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if gun and root and (GetRole(LocalPlayer) == "Sheriff" or LocalPlayer.Backpack:FindFirstChild("Gun")) then
-                    for _, v in pairs(Players:GetPlayers()) do
-                        if GetRole(v) == "Murderer" and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                            -- Apunta de cara y dispara instantáneamente por evento de red
-                            root.CFrame = CFrame.new(root.Position, v.Character.HumanoidRootPart.Position)
-                            gun:Activate()
-                            local remote = gun:FindFirstChildOfClass("RemoteEvent") or gun:FindFirstChild("Shoot")
-                            if remote then
-                                remote:FireServer(v.Character.HumanoidRootPart.Position)
-                            end
-                            Toggles["Kill Murderer"] = false -- Se apaga tras ejecutar el ataque limpio
-                        end
-                    end
-                end
-                task.wait(0.1)
-            end
-        end)
     end
 end)
