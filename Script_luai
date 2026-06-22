@@ -1,203 +1,483 @@
--- [[ SUKUNA HUB V1 ✔️ - EDICIÓN MEJORADA ]] --
--- Optimizado al 100% para Delta Executor (2026)
--- Temática: Expansión de Dominio (Rojo y Negro)
+--====================================================================--
+--[ WSD CUSTOM RED EDITION - FROM SCRATCH ] - FOR MM2
+--====================================================================--
 
--- Evitar ejecuciones duplicadas
-if _G.SukunaLoaded then return end
-_G.SukunaLoaded = true
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- LIBRERÍA ULTRA-RÁPIDA AJUSTADA PARA MÓVILES
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("👹 Sukuna Hub | v1 ✔️", "BloodTheme") -- Tema Rojo Sangre integrado
-
--- VARIABLES DE CONFIGURACIÓN
-local Flags = {
-    Aimbot = false,
-    SilentAim = false,
-    GhostMode = false,
-    SpeedGlitch = false,
-    FOVRadius = 120
+-- Configuration Framework
+local Toggles = {}
+local Config = {
+    SilentFOV = 120,
+    SpeedValue = 50
 }
+local Connections = {}
 
-local Camera = workspace.CurrentCamera
-local LP = game.Players.LocalPlayer
-local Mouse = LP:GetMouse()
+--====================================================================--
+--[ UTILITIES & ROLE DETECTION ]
+--====================================================================--
 
--- CÍRCULO FOV MEJORADO (SILENT AIM)
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 1.5
-FOVCircle.Color = Color3.fromRGB(255, 0, 0)
-FOVCircle.Filled = false
-FOVCircle.Transparency = 0.8
-
--- INTERFAZ (Se puede mover, abrir/cerrar tocando el icono flotante de Delta o presionando 'F1' si usas teclado)
-local MainTab = Window:NewTab("⚔️ Combate")
-local SectionCombat = MainTab:NewSection("Poderes de Corte")
-
-SectionCombat:NewToggle("Aimbot de Cámara", "Apunta automáticamente a la cabeza", function(state)
-    Flags.Aimbot = state
-end)
-
-SectionCombat:NewToggle("Silent Aim (Corte Sutil)", "Redirige los ataques al objetivo más cercano", function(state)
-    Flags.SilentAim = state
-    FOVCircle.Visible = state
-end)
-
-SectionCombat:NewSlider("Radio del FOV", "Ajusta el rango de ataque", 300, 30, function(v)
-    Flags.FOVRadius = v
-    FOVCircle.Radius = v
-end)
-
--- PESTAÑA VISUALES (Chams y ESP por Roles reales)
-local VisualsTab = Window:NewTab("👁️ Dominio")
-local SectionVisuals = VisualsTab:NewSection("Ojos de Dios")
-
--- Función exacta para conseguir el Rol en MM2
-local function GetPlayerRole(p)
-    if not p or not p:FindFirstChild("Backpack") then return "Innocent" end
-    if p.Backpack:FindFirstChild("Knife") or (p.Character and p.Character:FindFirstChild("Knife")) then
-        return "Murder"
-    elseif p.Backpack:FindFirstChild("Gun") or (p.Character and p.Character:FindFirstChild("Gun")) then
+local function GetPlayerRole(player)
+    if not player then return "Innocent" end
+    local backpack = player:FindFirstChild("Backpack")
+    local char = player.Character
+    if (backpack and backpack:FindFirstChild("Knife")) or (char and char:FindFirstChild("Knife")) then
+        return "Murderer"
+    elseif (backpack and backpack:FindFirstChild("Gun")) or (char and char:FindFirstChild("Gun")) then
         return "Sheriff"
     end
     return "Innocent"
 end
 
-local function GetRoleColor(p)
-    local role = GetPlayerRole(p)
-    if role == "Murder" then return Color3.fromRGB(255, 0, 0) end   -- Rojo Asesino
-    if role == "Sheriff" then return Color3.fromRGB(0, 0, 255) end  -- Azul Sheriff
-    return Color3.fromRGB(0, 255, 0)                                -- Verde Inocente
+local function GetRoleColor(player)
+    local role = GetPlayerRole(player)
+    if role == "Murderer" then
+        return Color3.fromRGB(255, 0, 0) -- Red
+    elseif role == "Sheriff" then
+        return Color3.fromRGB(0, 0, 255) -- Blue
+    end
+    return Color3.fromRGB(0, 255, 0) -- Green
 end
 
-SectionVisuals:NewButton("Activar Chams y ESP Perfectos", "Revela las almas en el mapa", function()
-    game:GetService("RunService").RenderStepped:Connect(function()
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= LP and player.Character then
-                local char = player.Character
-                local color = GetRoleColor(player)
-                
-                -- 1. CHAMS (Resaltado de silueta)
-                local highlight = char:FindFirstChild("SukunaCham")
-                if not highlight then
-                    highlight = Instance.new("Highlight")
-                    highlight.Name = "SukunaCham"
-                    highlight.Parent = char
+local function GetClosestPlayerByFOV()
+    local target, closestDist = nil, Config.SilentFOV
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+            local pos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+            if onScreen then
+                local mouseDist = (Vector2.new(pos.X, pos.Y) - UserInputService:GetMouseLocation()).Magnitude
+                if mouseDist < closestDist then
+                    closestDist = mouseDist
+                    target = p
                 end
-                highlight.FillColor = color
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.4
-                highlight.OutlineTransparency = 0
-                
-                -- 2. ESP LÍNEAS (Desde abajo de la pantalla hasta el jugador)
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local vector, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                    local line = char:FindFirstChild("SukunaLine")
+            end
+        end
+    end
+    return target
+end
+
+--====================================================================--
+--[ INTERFACE STRUCTURE (RED THEME) ]
+--====================================================================--
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "WSD_Red_Scratch"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+-- Mobile Smooth Dragging System (TopBar Restricted)
+local function MakeDraggable(dragFrame, targetFrame)
+    local dragging, dragInput, dragStart, startPos
+    dragFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = targetFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    dragFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragInput then
+            local delta = dragInput.Position - dragStart
+            targetFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- MINIMIZED BUTTON
+local MinimizedBtn = Instance.new("TextButton")
+MinimizedBtn.Parent = ScreenGui
+MinimizedBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MinimizedBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
+MinimizedBtn.Size = UDim2.new(0, 90, 0, 35)
+MinimizedBtn.Font = Enum.Font.GothamBold
+MinimizedBtn.Text = "OPEN MENU"
+MinimizedBtn.TextColor3 = Color3.fromRGB(255, 40, 40)
+MinimizedBtn.TextSize = 11
+MinimizedBtn.Visible = false
+
+local MCorn = Instance.new("UICorner")
+MCorn.CornerRadius = UDim.new(0, 6)
+MCorn.Parent = MinimizedBtn
+
+local MStroke = Instance.new("UIStroke")
+MStroke.Color = Color3.fromRGB(255, 40, 40)
+MStroke.Thickness = 1.5
+MStroke.Parent = MinimizedBtn
+MakeDraggable(MinimizedBtn, MinimizedBtn)
+
+-- MAIN WINDOW PANEL
+local MainHolder = Instance.new("Frame")
+MainHolder.Parent = ScreenGui
+MainHolder.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+MainHolder.Position = UDim2.new(0.5, -230, 0.5, -180)
+MainHolder.Size = UDim2.new(0, 460, 0, 360)
+
+local HCorn = Instance.new("UICorner")
+HCorn.CornerRadius = UDim.new(0, 8)
+HCorn.Parent = MainHolder
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 40, 40)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainHolder
+
+-- RED BAR TOP CONTROL
+local TopBar = Instance.new("Frame")
+TopBar.Parent = MainHolder
+TopBar.BackgroundColor3 = Color3.fromRGB(20, 15, 15)
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+
+local TCorn = Instance.new("UICorner")
+TCorn.CornerRadius = UDim.new(0, 8)
+TCorn.Parent = TopBar
+
+local Title = Instance.new("TextLabel")
+Title.Parent = TopBar
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(0, 250, 1, 0)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "WSD SCRIPT - CUSTOM RED"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 13
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = TopBar
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Position = UDim2.new(1, -35, 0, 0)
+CloseBtn.Size = UDim2.new(0, 35, 1, 0)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 40, 40)
+CloseBtn.TextSize = 15
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainHolder.Visible = false
+    MinimizedBtn.Visible = true
+end)
+
+MinimizedBtn.MouseButton1Click:Connect(function()
+    MainHolder.Visible = true
+    MinimizedBtn.Visible = false
+end)
+
+MakeDraggable(TopBar, MainHolder)
+
+-- SCROLLING SECTOR
+local ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Parent = MainHolder
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Position = UDim2.new(0, 10, 0, 45)
+ContentFrame.Size = UDim2.new(1, -20, 1, -55)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 750)
+ContentFrame.ScrollBarThickness = 3
+ContentFrame.ScrollBarImageColor3 = Color3.fromRGB(255, 40, 40)
+
+local UIGrid = Instance.new("UIGridLayout")
+UIGrid.Parent = ContentFrame
+UIGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+UIGrid.CellSize = UDim2.new(0, 205, 0, 40)
+UIGrid.SortOrder = Enum.SortOrder.LayoutOrder
+
+--====================================================================--
+--[ FRAMEWORK UTILITIES COMPONENT GENERATORS ]
+--====================================================================--
+
+local function CreateToggle(name, callback)
+    local state = false
+    local TFrame = Instance.new("Frame")
+    TFrame.Parent = ContentFrame
+    TFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+    
+    local TFCorn = Instance.new("UICorner")
+    TFCorn.CornerRadius = UDim.new(0, 6)
+    TFCorn.Parent = TFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Parent = TFrame
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Size = UDim2.new(1, -55, 1, 0)
+    Label.Font = Enum.Font.GothamSemibold
+    Label.Text = name
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.TextSize = 11
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Switch = Instance.new("TextButton")
+    Switch.Parent = TFrame
+    Switch.AnchorPoint = Vector2.new(1, 0.5)
+    Switch.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    Switch.Position = UDim2.new(1, -8, 0.5, 0)
+    Switch.Size = UDim2.new(0, 34, 0, 16)
+    Switch.Text = ""
+
+    local SCorn = Instance.new("UICorner")
+    SCorn.CornerRadius = UDim.new(1, 0)
+    SCorn.Parent = Switch
+
+    local Indicator = Instance.new("Frame")
+    Indicator.Parent = Switch
+    Indicator.AnchorPoint = Vector2.new(0, 0.5)
+    Indicator.BackgroundColor3 = Color3.fromRGB(140, 140, 140)
+    Indicator.Position = UDim2.new(0, 2, 0.5, 0)
+    Indicator.Size = UDim2.new(0, 12, 0, 12)
+
+    local ICorn = Instance.new("UICorner")
+    ICorn.CornerRadius = UDim.new(1, 0)
+    ICorn.Parent = Indicator
+
+    Switch.MouseButton1Click:Connect(function()
+        state = not state
+        Toggles[name] = state
+        if state then
+            Switch.BackgroundColor3 = Color3.fromRGB(120, 20, 20)
+            Indicator.BackgroundColor3 = Color3.fromRGB(255, 40, 40)
+            Indicator.Position = UDim2.new(1, -14, 0.5, 0)
+        else
+            Switch.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+            Indicator.BackgroundColor3 = Color3.fromRGB(140, 140, 140)
+            Indicator.Position = UDim2.new(0, 2, 0.5, 0)
+        end
+        callback(state)
+    end)
+end
+
+local function CreateSlider(name, min, max, default, configKey, callback)
+    local SFrame = Instance.new("Frame")
+    SFrame.Parent = ContentFrame
+    SFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
+    
+    local SFCorn = Instance.new("UICorner")
+    SFCorn.CornerRadius = UDim.new(0, 6)
+    SFCorn.Parent = SFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Parent = SFrame
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.Font = Enum.Font.GothamSemibold
+    Label.Text = name
+    Label.TextColor3 = Color3.fromRGB(180, 180, 180)
+    Label.TextSize = 11
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local VBox = Instance.new("TextBox")
+    VBox.Parent = SFrame
+    VBox.AnchorPoint = Vector2.new(1, 0.5)
+    VBox.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    VBox.Position = UDim2.new(1, -8, 0.5, 0)
+    VBox.Size = UDim2.new(0, 45, 0, 22)
+    VBox.Font = Enum.Font.GothamSemibold
+    VBox.Text = tostring(default)
+    VBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    VBox.TextSize = 11
+    VBox.ClearTextOnFocus = false
+
+    VBox.FocusLost:Connect(function()
+        local val = tonumber(VBox.Text)
+        if val then
+            val = math.clamp(val, min, max)
+            VBox.Text = tostring(val)
+            Config[configKey] = val
+            callback(val)
+        else
+            VBox.Text = tostring(Config[configKey])
+        end
+    end)
+    callback(default)
+end
+
+local function CreateHeader(text)
+    local Head = Instance.new("TextLabel")
+    Head.Parent = ContentFrame
+    Head.BackgroundTransparency = 1
+    Head.Font = Enum.Font.GothamBold
+    Head.Text = "--- " .. text .. " ---"
+    Head.TextColor3 = Color3.fromRGB(255, 40, 40)
+    Head.TextSize = 11
+end
+
+--====================================================================--
+--[ EXECUTING TARGET FUNCTIONS INTERACTION ]
+--====================================================================--
+
+CreateHeader("AUTOMATION COMBAT")
+
+CreateToggle("AIMBOT", function(state)
+    if state then
+        Connections["AimbotCore"] = RunService.RenderStepped:Connect(function()
+            local target = GetClosestPlayerByFOV()
+            if target and target.Character and target.Character:FindFirstChild("Head") then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+            end
+        end)
+    elseif Connections["AimbotCore"] then
+        Connections["AimbotCore"]:Disconnect()
+    end
+end)
+
+CreateToggle("SILENT AIM", function(state)
+    if state then
+        Connections["SilentAimCore"] = RunService.RenderStepped:Connect(function()
+            local target = GetClosestPlayerByFOV()
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                if tool and tool:FindFirstChild("Handle") then
+                    -- Aligns tool execution parameters to head coordinates seamlessly
+                    tool.Handle.CFrame = CFrame.new(tool.Handle.Position, target.Character.HumanoidRootPart.Position)
+                end
+            end
+        end)
+    elseif Connections["SilentAimCore"] then
+        Connections["SilentAimCore"]:Disconnect()
+    end
+end)
+
+CreateSlider("Silent FOV Size", 30, 500, 120, "SilentFOV", function() end)
+
+--====================================================================--
+CreateHeader("VISUAL BYPASS (CHAMS & LINES)")
+
+CreateToggle("CHAMS COLOR ROLES", function(state)
+    if state then
+        Connections["ChampsEngine"] = RunService.RenderStepped:Connect(function()
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local color = GetRoleColor(p)
+                    local highlight = p.Character:FindFirstChild("WSDScratchChams")
+                    if not highlight then
+                        highlight = Instance.new("Highlight")
+                        highlight.Name = "WSDScratchChams"
+                        highlight.Parent = p.Character
+                        highlight.FillTransparency = 0.4
+                        highlight.OutlineTransparency = 0
+                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    end
+                    highlight.FillColor = color
+                end
+            end
+        end)
+    else
+        if Connections["ChampsEngine"] then Connections["ChampsEngine"]:Disconnect() end
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("WSDScratchChams") then
+                p.Character.WSDScratchChams:Destroy()
+            end
+        end
+    end
+end)
+
+CreateToggle("ESP LINES COLOR ROLES", function(state)
+    if state then
+        Connections["LinesEngine"] = RunService.RenderStepped:Connect(function()
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local color = GetRoleColor(p)
+                    local line = p:FindFirstChild("WSDLineAsset")
+                    if not line then
+                        line = Drawing.new("Line")
+                        line.Thickness = 1.5
+                        line.Transparency = 1
+                        -- Registers asset validation inside local structure frame
+                        local container = Instance.new("Folder")
+                        container.Name = "WSDLineAsset"
+                        container.Parent = p
+                    end
+                    
+                    local partPos, onScreen = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+                    local lineData = game:GetService("CoreGui"):FindFirstChild("WSDLineAsset") or p:FindFirstChild("WSDLineAsset")
                     
                     if onScreen then
-                        if not line then
-                            line = Instance.new("LineHandleAdornment")
-                            line.Name = "SukunaLine"
-                            line.Length = 0
-                            line.Thickness = 4
-                            line.ZIndex = 5
-                            line.AlwaysOnTop = true
-                            line.Parent = char
+                        -- Forces standard overlay calculations for drawing objects
+                        local drawingLine = p:FindFirstChild("DrawingLineInstance") or Drawing.new("Line")
+                        drawingLine.Thickness = 1.5
+                        drawingLine.Transparency = 1
+                        drawingLine.Color = color
+                        drawingLine.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                        drawingLine.To = Vector2.new(partPos.X, partPos.Y)
+                        drawingLine.Visible = true
+                        if not p:FindFirstChild("DrawingLineInstance") then
+                            local stringVal = Instance.new("StringValue")
+                            stringVal.Name = "DrawingLineInstance"
+                            stringVal.Parent = p
+                            Connections["LineObj_" .. p.Name] = drawingLine
                         end
-                        line.Color3 = color
-                        line.Adornee = hrp
                     else
-                        if line then line:Destroy() end
+                        if Connections["LineObj_" .. p.Name] then Connections["LineObj_" .. p.Name].Visible = false end
                     end
                 end
             end
+        end)
+    else
+        if Connections["LinesEngine"] then Connections["LinesEngine"]:Disconnect() end
+        for _, p in pairs(Players:GetPlayers()) do
+            if p:FindFirstChild("WSDLineAsset") then p.WSDLineAsset:Destroy() end
+            if p:FindFirstChild("DrawingLineInstance") then p.DrawingLineInstance:Destroy() end
+            if Connections["LineObj_" .. p.Name] then
+                Connections["LineObj_" .. p.Name]:Destroy()
+                Connections["LineObj_" .. p.Name] = nil
+            end
         end
-    end)
+    end
 end)
 
--- PESTAÑA MOVIMIENTO
-local MiscTab = Window:NewTab("⚡ Movimiento")
-local SectionMisc = MiscTab:NewSection("Habilidades Físicas")
+--====================================================================--
+CreateHeader("PLAYER MODS & CORES")
 
-SectionMisc:NewToggle("Ghost Mode (Atravesar)", "Te permite traspasar paredes", function(state)
-    Flags.GhostMode = state
+CreateToggle("GHOST MODE", function(state)
+    if LocalPlayer.Character then
+        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.Transparency = state and 1 or 0
+            end
+        end
+    end
 end)
 
-SectionMisc:NewToggle("Speed Glitch (C-Frame)", "Desplazamiento ultrarrápido", function(state)
-    Flags.SpeedGlitch = state
-end)
-
--- BUCLE CENTRAL (PROCESAMIENTO DE FUNCIONES)
-local function GetClosestPlayer()
-    local closest = nil
-    local shortestDist = math.huge
-    for _, v in pairs(game.Players:GetPlayers()) do
-        if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-            local pos, onScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
-            if onScreen then
-                local dist = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
-                if dist < shortestDist and dist <= Flags.FOVRadius then
-                    closest = v
-                    shortestDist = dist
+CreateToggle("SPEED GLITCH", function(state)
+    if state then
+        Connections["SpeedEngine"] = RunService.RenderStepped:Connect(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum and hum.MoveDirection.Magnitude > 0 then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame + (hum.MoveDirection * (Config.SpeedValue / 100))
                 end
             end
-        end
+        end)
+    elseif Connections["SpeedEngine"] then
+        Connections["SpeedEngine"]:Disconnect()
     end
-    return closest
-end
+end)
+CreateSlider("Glitch Power Set", 10, 150, 50, "SpeedValue", function() end)
 
-game:GetService("RunService").RenderStepped:Connect(function()
-    -- Actualizar Círculo FOV en el mouse
-    if FOVCircle.Visible then
-        FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
-    end
-    
-    -- Lógica Ghost Mode
-    if Flags.GhostMode and LP.Character then
-        for _, part in pairs(LP.Character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+CreateToggle("NOCLIP", function(state)
+    if state then
+        Connections["NoclipEngine"] = RunService.Stepped:Connect(function()
+            if Toggles["NOCLIP"] and LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
             end
-        end
-    end
-    
-    -- Lógica Speed Glitch
-    if Flags.SpeedGlitch and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        if LP.Character.Humanoid.MoveDirection.Magnitude > 0 then
-            LP.Character:TranslateBy(LP.Character.Humanoid.MoveDirection * 0.6) -- Velocidad fluida sin patearte del servidor
-        end
-    end
-    
-    -- Lógica Aimbot de Cámara
-    if Flags.Aimbot then
-        local target = GetClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
-        end
+        end)
+    elseif Connections["NoclipEngine"] then
+        Connections["NoclipEngine"]:Disconnect()
     end
 end)
-
--- METATABLE HOOK: CORRECCIÓN DEL SILENT AIM REAL
-local Mt = getrawmetatable(game)
-local OldIndex = Mt.__index
-setreadonly(Mt, false)
-
-Mt.__index = newcclosure(function(Self, Key)
-    if Flags.SilentAim and tostring(Key) == "Hit" and Self == Mouse then
-        local target = GetClosestPlayer()
-        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            return target.Character.HumanoidRootPart.CFrame
-        end
-    end
-    return OldIndex(Self, Key)
-end)
-
-setreadonly(Mt, true)
-
--- Notificación final al cargar
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "👹 Sukuna Hub v1 ✔️",
-    Text = "Expansión de Dominio: Desplegada con éxito.",
-    Duration = 5
-})
